@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多币种个人记账本</title>
+    <!-- Tailwind CSS v3 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/lib/index.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- SheetJS (xlsx) for Excel import/export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen pb-16">
+
+    <!-- 登录/注册弹窗层 -->
+    <div id="authOverlay" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full p-6 sm:p-8 shadow-2xl space-y-5">
+            <div class="flex justify-between items-center">
+                <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 text-xl shadow-inner">
+                    <i class="fa-solid fa-wallet"></i>
+                </div>
+                <select id="authLangSelect" onchange="changeLanguage(this.value)" class="text-xs bg-slate-100 text-slate-700 border border-slate-200 rounded-xl px-2.5 py-1.5 focus:outline-none font-medium">
+                    <option value="zh">🇨🇳 简体中文</option>
+                    <option value="zh-TW">🇭🇰 繁體中文</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Español</option>
+                    <option value="it">🇮🇹 Italiano</option>
+                    <option value="fr">🇫🇷 Français</option>
+                    <option value="pt">🇵🇹 Português</option>
+                    <option value="ja">🇯🇵 日本語</option>
+                    <option value="ko">🇰🇷 한국어</option>
+                </select>
+            </div>
+
+            <div class="text-center space-y-1">
+                <h2 id="i18nAuthTitle" class="text-xl font-bold text-slate-900">多币种个人记账本</h2>
+                <p id="i18nAuthSub" class="text-xs text-slate-400">PostgreSQL 多用户安全隔离系统</p>
+            </div>
+
+            <div class="flex bg-slate-100 p-1 rounded-xl">
+                <button type="button" id="tabLoginBtn" onclick="switchAuthMode('login')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition" data-i18n="loginTab">登录账号</button>
+                <button type="button" id="tabRegBtn" onclick="switchAuthMode('register')" class="flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition" data-i18n="regTab">注册新账号</button>
+            </div>
+
+            <form id="authForm" onsubmit="handleAuth(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" data-i18n="usernameLabel">用户名 / 账号</label>
+                    <input type="text" id="authUsername" required placeholder="请输入用户名..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1" data-i18n="pwdLabel">密码</label>
+                    <input type="password" id="authPassword" required placeholder="请输入密码..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div id="authErrorMsg" class="text-xs text-rose-500 hidden font-medium text-center"></div>
+                <button type="submit" id="authSubmitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-200 text-sm" data-i18n="loginBtn">立即登录</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-indigo-600 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex flex-col gap-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-2">
+                    <div class="bg-white/10 p-2 rounded-xl">
+                        <i class="fa-solid fa-wallet text-lg"></i>
+                    </div>
+                    <h1 class="text-base sm:text-lg font-bold tracking-wide" data-i18n="appTitle">多币种个人记账本</h1>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span id="userDisplay" class="text-xs bg-indigo-700/80 border border-indigo-500/50 px-2.5 py-1.5 rounded-xl font-medium truncate max-w-[100px]"></span>
+                    <button onclick="openModal()" class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold px-3.5 py-2 rounded-xl shadow-md flex items-center gap-1.5 transition active:scale-95">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="addTx">记一笔</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar pt-1 border-t border-indigo-500/40 text-xs">
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <select id="langSelect" onchange="changeLanguage(this.value)" class="bg-indigo-700/90 text-white border border-indigo-500 rounded-lg px-2 py-1.5 focus:outline-none font-medium">
+                        <option value="zh">🇨🇳 简体中文</option>
+                        <option value="zh-TW">🇭🇰 繁體中文</option>
+                        <option value="en">🇬🇧 English</option>
+                        <option value="es">🇪🇸 Español</option>
+                        <option value="it">🇮🇹 Italiano</option>
+                        <option value="fr">🇫🇷 Français</option>
+                        <option value="pt">🇵🇹 Português</option>
+                        <option value="ja">🇯🇵 日本語</option>
+                        <option value="ko">🇰🇷 한국어</option>
+                    </select>
+
+                    <label class="bg-indigo-700/90 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg cursor-pointer transition flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-file-excel text-emerald-400"></i> <span data-i18n="import">导入</span>
+                        <input type="file" id="importFile" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="promptImportCurrency(event)">
+                    </label>
+                    <button onclick="exportExcel()" class="bg-indigo-700/90 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-file-excel text-emerald-400"></i> <span data-i18n="export">导出</span>
+                    </button>
+                    <button onclick="exportJSON()" class="bg-indigo-700/90 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg transition flex items-center gap-1 shrink-0">
+                        <i class="fa-solid fa-download text-amber-300"></i> JSON
+                    </button>
+                </div>
+                <div class="flex items-center gap-1.5 shrink-0">
+                    <button onclick="openPasswordModal()" class="bg-indigo-800 hover:bg-indigo-900 text-white px-2.5 py-1.5 rounded-lg transition flex items-center gap-1" data-i18n="changePwd">修改密码</button>
+                    <button onclick="logout()" class="bg-rose-600/90 hover:bg-rose-700 text-white px-2.5 py-1.5 rounded-lg transition flex items-center gap-1" data-i18n="logout">退出</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-5 space-y-4">
+        <!-- 时间范围与基准货币控制栏 -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+            <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="range">时间范围</span>
+                </span>
+                <div class="flex items-center gap-1.5">
+                    <label class="text-xs font-medium text-slate-400" data-i18n="baseCurrency">折算基准:</label>
+                    <select id="baseCurrency" onchange="updateBaseCurrency()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-bold text-indigo-600 focus:outline-none">
+                        <option value="CNY">CNY (人民币)</option>
+                        <option value="EUR">EUR (欧元)</option>
+                        <option value="USD">USD (美元)</option>
+                        <option value="GBP">GBP (英镑)</option>
+                        <option value="JPY">JPY (日元)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                <button onclick="setTimeRange('all')" id="btn-all" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0" data-i18n="all">全部</button>
+                <button onclick="setTimeRange('today')" id="btn-today" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
+                <button onclick="setTimeRange('week')" id="btn-week" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
+                <button onclick="setTimeRange('month')" id="btn-month" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
+                <button onclick="setTimeRange('year')" id="btn-year" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
+            </div>
+
+            <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-100 text-xs">
+                <div class="flex items-center gap-1 flex-1">
+                    <input type="date" id="customStartDate" onchange="setTimeRange('custom')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <span class="text-slate-400 font-medium" data-i18n="to">至</span>
+                <div class="flex items-center gap-1 flex-1">
+                    <input type="date" id="customEndDate" onchange="setTimeRange('custom')" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 text-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 汇总数据卡片 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <!-- 收入卡片 -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between space-y-3">
+                <div>
+                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2" data-i18n="totalIncome">筛选期总收入 (各币种明细)</p>
+                    <div id="incomeBreakdown" class="space-y-1 text-sm font-bold text-emerald-600">
+                        <!-- 动态填入各币种收入 -->
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-baseline justify-between">
+                    <span class="text-xs text-slate-400" data-i18n="convertedTotal">折算总计:</span>
+                    <h2 id="totalIncomeConverted" class="text-xl font-bold text-emerald-700">¥ 0.00</h2>
+                </div>
+            </div>
+
+            <!-- 支出与结余卡片 -->
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between space-y-3">
+                <div>
+                    <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2" data-i18n="totalExpenseBalance">筛选期总支出 (各币种明细)</p>
+                    <div id="expenseBreakdown" class="space-y-1 text-sm font-bold text-rose-600">
+                        <!-- 动态填入各币种支出 -->
+                    </div>
+                </div>
+                <div class="pt-3 border-t border-slate-100 flex items-baseline justify-between">
+                    <span class="text-xs text-slate-400"><span data-i18n="convertedBalance">折算结余</span>:</span>
+                    <h2 id="netBalanceConverted" class="text-xl font-bold text-indigo-600">¥ 0.00</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- 图表统计区块 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-500"></i> <span data-i18n="expCategoryChart">支出分类统计 (折算后)</span>
+                </h3>
+                <div class="relative h-56 flex items-center justify-center">
+                    <canvas id="expenseCategoryChart"></canvas>
+                </div>
+            </div>
+            <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-xs font-bold text-slate-600 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-bar text-indigo-500"></i> <span data-i18n="typeComparisonChart">收支类型对比 (折算后)</span>
+                </h3>
+                <div class="relative h-56 flex items-center justify-center">
+                    <canvas id="typeComparisonChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 筛选与账单列表区块 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div class="p-3 sm:p-4 bg-slate-50/70 border-b border-slate-100 flex flex-col sm:flex-row gap-2 justify-between items-center">
+                <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto flex-1">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                            <i class="fa-solid fa-search text-xs"></i>
+                        </span>
+                        <input type="text" id="searchInput" placeholder="搜索备注/分类..." oninput="filterTransactions()" class="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filterType" onchange="filterTransactions()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1 sm:flex-none">
+                            <option value="" data-i18n="allTypes">全部类型</option>
+                            <option value="收入" data-i18n="income">收入</option>
+                            <option value="支出" data-i18n="expense">支出</option>
+                        </select>
+                        <select id="filterCategory" onchange="filterTransactions()" class="text-xs bg-white border border-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-indigo-500 flex-1 sm:flex-none">
+                            <option value="" data-i18n="allCategories">全部分类</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                    <span id="txCount" class="text-xs text-slate-400">共 0 笔</span>
+                    <button onclick="batchDeleteTransactions()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-trash-can"></i> <span data-i18n="batchDelete">批量删除</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 表格区域 -->
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/50 text-slate-400 text-[11px] uppercase tracking-wider border-b border-slate-100">
+                            <th class="py-3 px-3 text-center w-10">
+                                <input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)" class="rounded text-indigo-600 focus:ring-indigo-500">
+                            </th>
+                            <th class="py-3 px-3 font-semibold" data-i18n="thDate">日期</th>
+                            <th class="py-3 px-3 font-semibold" data-i18n="thGroup">大类</th>
+                            <th class="py-3 px-3 font-semibold" data-i18n="thCategory">分类</th>
+                            <th class="py-3 px-3 font-semibold" data-i18n="thType">类型</th>
+                            <th class="py-3 px-3 font-semibold" data-i18n="thNote">备注/凭证</th>
+                            <th class="py-3 px-3 font-semibold text-right" data-i18n="thAmount">金额</th>
+                            <th class="py-3 px-3 font-semibold text-center" data-i18n="thAction">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionTable" class="divide-y divide-slate-100 text-xs sm:text-sm">
+                        <!-- 动态填充 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- 图片查看大图弹窗 -->
+    <div id="imagePreviewModal" onclick="closeImagePreview()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 cursor-pointer">
+        <div class="relative max-w-2xl w-full flex items-center justify-center">
+            <img id="previewImgSrc" src="" class="max-h-[85vh] max-w-full rounded-2xl shadow-2xl object-contain">
+        </div>
+    </div>
+
+    <!-- 修改密码弹窗 -->
+    <div id="passwordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-slate-800 text-base" data-i18n="changePwd">修改密码</h3>
+            <form onsubmit="changePassword(event)" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="oldPwd">原密码</label>
+                    <input type="password" id="oldPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="newPwd">新密码</label>
+                    <input type="password" id="newPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closePasswordModal()" class="px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
+                    <button type="submit" class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-100" data-i18n="confirmChange">确认修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 导入币种选择弹窗 -->
+    <div id="importModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-slate-800 text-base" data-i18n="importModalTitle">选择导入币种</h3>
+            <p class="text-xs text-slate-400" data-i18n="importModalDesc">请为本次导入的所有账单指定币种：</p>
+            <div>
+                <select id="importCurrencySelect" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold">
+                    <option value="CNY">CNY (人民币)</option>
+                    <option value="EUR">EUR (欧元)</option>
+                    <option value="USD">USD (美元)</option>
+                    <option value="GBP">GBP (英镑)</option>
+                    <option value="JPY">JPY (日元)</option>
+                </select>
+            </div>
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="cancelImport()" class="px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
+                <button type="button" onclick="confirmImport()" class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-100" data-i18n="confirm">确认导入</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 记账/编辑弹窗 -->
+    <div id="transactionModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 id="modalTitleText" class="font-bold text-slate-800 text-base" data-i18n="modalTitle">添加新记账</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            <form id="transactionForm" onsubmit="saveTransaction(event)" class="space-y-3.5">
+                <input type="hidden" id="txEditId">
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalDate">日期与时间</label>
+                    <input type="datetime-local" id="txDate" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalType">收支类型</label>
+                        <select id="txType" onchange="onTxTypeChange()" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="支出" data-i18n="expense">支出</option>
+                            <option value="收入" data-i18n="income">收入</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalCurrency">币种</label>
+                        <select id="txCurrency" class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                            <option value="CNY">CNY (人民币)</option>
+                            <option value="EUR">EUR (欧元)</option>
+                            <option value="USD">USD (美元)</option>
+                            <option value="GBP">GBP (英镑)</option>
+                            <option value="JPY">JPY (日元)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-xs font-medium text-slate-500" data-i18n="modalGroup">大类</label>
+                            <button type="button" onclick="openNewCategoryModal()" class="text-[10px] text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-0.5"><i class="fa-solid fa-plus"></i> <span data-i18n="newCategoryBtn">新增大类</span></button>
+                        </div>
+                        <select id="txGroup" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalCategory">子类</label>
+                        <input type="text" id="txCategory" placeholder="如: 午餐 / 机票" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalAmount">金额</label>
+                    <input type="number" step="0.01" id="txAmount" placeholder="0.00" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-semibold text-slate-800">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalNote">备注说明</label>
+                    <input type="text" id="txNote" placeholder="填写相关说明..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="receiptImage">账单凭证图片 (小票/发票)</label>
+                    <div class="flex items-center gap-3">
+                        <label class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs px-3.5 py-2 rounded-xl cursor-pointer transition border border-slate-200 flex items-center gap-1.5 shrink-0">
+                            <i class="fa-solid fa-camera"></i> <span data-i18n="uploadImg">选择图片</span>
+                            <input type="file" id="txImageFile" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                        </label>
+                        <span id="imageFileName" class="text-xs text-slate-400 truncate">未选择文件</span>
+                        <button type="button" id="removeImgBtn" onclick="removeAttachedImage()" class="text-rose-500 hover:text-rose-700 text-xs hidden"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
+                    <div id="imagePreviewContainer" class="mt-2 hidden">
+                        <img id="txImagePreview" src="" class="h-16 w-16 object-cover rounded-xl border border-slate-200 shadow-sm cursor-pointer" onclick="previewFullImage(this.src)">
+                    </div>
+                    <input type="hidden" id="txImageBase64">
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2.5 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
+                    <button type="submit" class="px-5 py-2.5 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-100" data-i18n="save">保存账单</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 用户自定义新增大类弹窗 -->
+    <div id="newCategoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl space-y-4">
+            <h3 class="font-bold text-slate-800 text-base" data-i18n="newCategoryTitle">新增自定义大类</h3>
+            <p class="text-xs text-slate-400" data-i18n="newCategoryDesc">为当前收支类型添加一个新的专属大类：</p>
+            <input type="text" id="newCategoryNameInput" placeholder="请输入大类名称..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <div class="pt-2 flex justify-end gap-2">
+                <button type="button" onclick="closeNewCategoryModal()" class="px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
+                <button type="button" onclick="saveNewCategory()" class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-100" data-i18n="confirm">确认添加</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = "https://2a40a818.r32.cpolar.top/api"; 
+
+        let currentUserId = "";
+        let transactions = [];
+        let userCustomCategories = {
+            "支出": ["餐饮", "旅游", "交通", "住房", "娱乐"],
+            "收入": ["奖学金", "工资", "劳务费", "红包", "理财", "报销"]
+        };
+        let baseCurrency = localStorage.getItem('baseCurrency') || 'CNY';
+        const baseCurrSelect = document.getElementById('baseCurrency');
+        if (baseCurrSelect) baseCurrSelect.value = baseCurrency;
+
+        let currentTimeRange = 'all';
+        let expenseChart = null;
+        let typeChart = null;
+        let pendingImportFile = null;
+        let authMode = 'login';
+        let currentLang = localStorage.getItem('appLang') || 'zh';
+        
+        const langSelect = document.getElementById('langSelect');
+        const authLangSelect = document.getElementById('authLangSelect');
+        if (langSelect) langSelect.value = currentLang;
+        if (authLangSelect) authLangSelect.value = currentLang;
+
+        const translations = {
+            zh: {
+                appTitle: "多币种个人记账本", addTx: "记一笔", import: "导入", export: "导出",
+                range: "时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", to: "至",
+                baseCurrency: "折算基准:", totalIncome: "筛选期总收入 (各币种明细)", totalExpenseBalance: "筛选期总支出 (各币种明细)",
+                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算结余", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类统计 (折算后)",
+                typeComparisonChart: "收支类型对比 (折算后)", allTypes: "全部类型", income: "收入", expense: "支出",
+                allCategories: "全部分类", thDate: "日期", thGroup: "大类", thCategory: "分类", thType: "类型",
+                thNote: "备注/凭证", thAmount: "金额", thAction: "操作", modalTitle: "添加新记账", modalEditTitle: "修改账单",
+                modalDate: "日期与时间", modalType: "收支类型", modalCurrency: "币种", modalGroup: "大类",
+                modalCategory: "子类", modalAmount: "金额", modalNote: "备注说明", cancel: "取消",
+                confirm: "确认导入", save: "保存账单", importModalTitle: "选择导入币种",
+                importModalDesc: "请为本次导入的所有账单指定币种：", loginTab: "登录账号", regTab: "注册新账号",
+                usernameLabel: "用户名 / 账号", pwdLabel: "密码", loginBtn: "立即登录", regBtn: "立即注册",
+                changePwd: "修改密码", logout: "退出", oldPwd: "原密码", newPwd: "新密码", confirmChange: "确认修改",
+                batchDelete: "批量删除", newCategoryBtn: "新增大类", newCategoryTitle: "新增自定义大类", newCategoryDesc: "为当前收支类型添加一个新的专属大类：",
+                receiptImage: "账单凭证图片 (小票/发票)", uploadImg: "选择图片"
+            },
+            "zh-TW": {
+                appTitle: "多幣種個人記帳本", addTx: "記一筆", import: "匯入", export: "匯出",
+                range: "時間範圍", all: "全部", today: "今日", week: "本週", month: "本月", year: "本年", to: "至",
+                baseCurrency: "基準:", totalIncome: "篩選期總收入", totalExpenseBalance: "篩選期總支出 / 結餘",
+                balance: "結餘", convertedTotal: "折算總計:", convertedBalance: "折算結餘", convertedNote: "已按當前基準幣種實時折算", expCategoryChart: "支出分類統計",
+                typeComparisonChart: "收支類型對比", allTypes: "全部類型", income: "收入", expense: "支出",
+                allCategories: "全部分類", thDate: "日期", thGroup: "大類", thCategory: "分類", thType: "類型",
+                thNote: "備註/憑證", thAmount: "金額", thAction: "操作", modalTitle: "新增記帳", modalEditTitle: "修改帳單",
+                modalDate: "日期與時間", modalType: "收支類型", modalCurrency: "幣種", modalGroup: "大類",
+                modalCategory: "子類", modalAmount: "金額", modalNote: "備註說明", cancel: "取消",
+                confirm: "確認匯入", save: "保存帳單", importModalTitle: "選擇匯入幣種",
+                importModalDesc: "請為本次匯入的所有帳單指定幣種：", loginTab: "登入帳號", regTab: "註冊新帳號",
+                usernameLabel: "用戶名 / 帳號", pwdLabel: "密碼", loginBtn: "立即登入", regBtn: "立即註冊",
+                changePwd: "修改密碼", logout: "退出", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
+                batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個新的專屬大類：",
+                receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片"
+            },
+            en: {
+                appTitle: "Multi-Currency Tracker", addTx: "Add", import: "Import", export: "Export",
+                range: "Range", all: "All", today: "Today", week: "Week", month: "Month", year: "Year", to: "to",
+                baseCurrency: "Base:", totalIncome: "Total Income (Breakdown)", totalExpenseBalance: "Total Expense (Breakdown)",
+                balance: "Balance", convertedTotal: "Converted Total:", convertedBalance: "Converted Balance", convertedNote: "Real-time converted to base currency", expCategoryChart: "Expense by Category",
+                typeComparisonChart: "Income vs Expense", allTypes: "All Types", income: "Income", expense: "Expense",
+                allCategories: "All Categories", thDate: "Date", thGroup: "Group", thCategory: "Category", thType: "Type",
+                thNote: "Note/Receipt", thAmount: "Amount", thAction: "Action", modalTitle: "Add New Record", modalEditTitle: "Edit Record",
+                modalDate: "Date & Time", modalType: "Type", modalCurrency: "Currency", modalGroup: "Group",
+                modalCategory: "Category", modalAmount: "Amount", modalNote: "Note", cancel: "Cancel",
+                confirm: "Confirm", save: "Save", importModalTitle: "Select Currency",
+                importModalDesc: "Specify currency for imported records:", loginTab: "Login", regTab: "Register",
+                usernameLabel: "Username", pwdLabel: "Password", loginBtn: "Login Now", regBtn: "Register Now",
+                changePwd: "Password", logout: "Logout", oldPwd: "Old Password", newPwd: "New Password", confirmChange: "Confirm",
+                batchDelete: "Batch Delete", newCategoryBtn: "New Group", newCategoryTitle: "Add Custom Group", newCategoryDesc: "Add a new exclusive main category for current type:",
+                receiptImage: "Receipt Image (Invoice/Ticket)", uploadImg: "Choose Image"
+            },
+            es: {
+                appTitle: "Gestor Multidivisa", addTx: "Añadir", import: "Importar", export: "Exportar",
+                range: "Rango", all: "Todo", today: "Hoy", week: "Semana", month: "Mes", year: "Año", to: "a",
+                baseCurrency: "Base:", totalIncome: "Ingresos Totales", totalExpenseBalance: "Gastos Totales",
+                balance: "Balance", convertedTotal: "Total:", convertedBalance: "Balance", convertedNote: "Convertido en tiempo real", expCategoryChart: "Gastos por Categoría",
+                typeComparisonChart: "Ingresos vs Gastos", allTypes: "Todos", income: "Ingresos", expense: "Gastos",
+                allCategories: "Todas", thDate: "Fecha", thGroup: "Grupo", thCategory: "Categoría", thType: "Tipo",
+                thNote: "Nota/Recibo", thAmount: "Cantidad", thAction: "Acción", modalTitle: "Añadir Registro", modalEditTitle: "Editar",
+                modalDate: "Fecha y Hora", modalType: "Tipo", modalCurrency: "Moneda", modalGroup: "Grupo",
+                modalCategory: "Categoría", modalAmount: "Cantidad", modalNote: "Nota", cancel: "Cancelar",
+                confirm: "Confirmar", save: "Guardar", importModalTitle: "Moneda",
+                importModalDesc: "Especifique la moneda:", loginTab: "Entrar", regTab: "Registro",
+                usernameLabel: "Usuario", pwdLabel: "Contraseña", loginBtn: "Entrar", regTab: "Registrarse",
+                changePwd: "Clave", logout: "Salir", oldPwd: "Antigua", newPwd: "Nueva", confirmChange: "Confirmar",
+                batchDelete: "Eliminar Lote", newCategoryBtn: "Nuevo Grupo", newCategoryTitle: "Añadir Grupo", newCategoryDesc: "Añadir categoría principal:",
+                receiptImage: "Imagen de Recibo", uploadImg: "Elegir Imagen"
+            },
+            it: {
+                appTitle: "Gestore Spese", addTx: "Aggiungi", import: "Importa", export: "Esporta",
+                range: "Intervallo", all: "Tutti", today: "Oggi", week: "Settimana", month: "Mese", year: "Anno", to: "a",
+                baseCurrency: "Base:", totalIncome: "Entrate Totali", totalExpenseBalance: "Spese Totali",
+                balance: "Saldo", convertedTotal: "Totale:", convertedBalance: "Saldo", convertedNote: "Convertito in tempo reale", expCategoryChart: "Spese per Categoria",
+                typeComparisonChart: "Entrate vs Spese", allTypes: "Tutti", income: "Entrate", expense: "Spese",
+                allCategories: "Tutte", thDate: "Data", thGroup: "Gruppo", thCategory: "Categoria", thType: "Tipo",
+                thNote: "Nota/Ricevuta", thAmount: "Importo", thAction: "Azione", modalTitle: "Nuovo Record", modalEditTitle: "Modifica",
+                modalDate: "Data e Ora", modalType: "Tipo", modalCurrency: "Valuta", modalGroup: "Gruppo",
+                modalCategory: "Categoria", modalAmount: "Importo", modalNote: "Nota", cancel: "Annulla",
+                confirm: "Conferma", save: "Salva", importModalTitle: "Valuta",
+                importModalDesc: "Specifica la valuta:", loginTab: "Accedi", regTab: "Registrati",
+                usernameLabel: "Utente", pwdLabel: "Password", loginBtn: "Accedi", regTab: "Registrati",
+                changePwd: "Password", logout: "Esci", oldPwd: "Vecchia", newPwd: "Nuova", confirmChange: "Conferma",
+                batchDelete: "Elimina Selezionati", newCategoryBtn: "Nuovo Gruppo", newCategoryTitle: "Aggiungi Gruppo", newCategoryDesc: "Aggiungi categoria:",
+                receiptImage: "Immagine Ricevuta", uploadImg: "Scegli Immagine"
+            },
+            fr: {
+                appTitle: "Gestionnaire", addTx: "Ajouter", import: "Importer", export: "Exporter",
+                range: "Plage", all: "Tout", today: "Aujourd'hui", week: "Semaine", month: "Mois", year: "Année", to: "à",
+                baseCurrency: "Base:", totalIncome: "Revenus Totaux", totalExpenseBalance: "Dépenses Totales",
+                balance: "Solde", convertedTotal: "Total:", convertedBalance: "Solde", convertedNote: "Converti en temps réel", expCategoryChart: "Dépenses par Catégorie",
+                typeComparisonChart: "Revenus vs Dépenses", allTypes: "Tous", income: "Revenus", expense: "Dépenses",
+                allCategories: "Toutes", thDate: "Date", thGroup: "Groupe", thCategory: "Catégorie", thType: "Type",
+                thNote: "Note/Reçu", thAmount: "Montant", thAction: "Action", modalTitle: "Ajouter", modalEditTitle: "Modifier",
+                modalDate: "Date et Heure", modalType: "Type", modalCurrency: "Devise", modalGroup: "Groupe",
+                modalCategory: "Catégorie", modalAmount: "Montant", modalNote: "Note", cancel: "Annuler",
+                confirm: "Confirmer", save: "Enregistrer", importModalTitle: "Devise",
+                importModalDesc: "Spécifiez la devise :", loginTab: "Connexion", regTab: "Inscription",
+                usernameLabel: "Nom", pwdLabel: "Mot de passe", loginBtn: "Connexion", regTab: "Inscription",
+                changePwd: "Mot de passe", logout: "Sortir", oldPwd: "Ancien", newPwd: "Nouveau", confirmChange: "Confirmer",
+                batchDelete: "Supprimer", newCategoryBtn: "Nouveau Groupe", newCategoryTitle: "Ajouter un Groupe", newCategoryDesc: "Ajouter une catégorie :",
+                receiptImage: "Image du Reçu", uploadImg: "Choisir"
+            },
+            pt: {
+                appTitle: "Gestor de Despesas", addTx: "Adicionar", import: "Importar", export: "Exportar",
+                range: "Período", all: "Tudo", today: "Hoje", week: "Semana", month: "Mês", year: "Ano", to: "até",
+                baseCurrency: "Base:", totalIncome: "Receita Total", totalExpenseBalance: "Despesa Total",
+                balance: "Saldo", convertedTotal: "Total:", convertedBalance: "Saldo", convertedNote: "Convertido em tempo real", expCategoryChart: "Despesas por Categoria",
+                typeComparisonChart: "Receita vs Despesa", allTypes: "Todos", income: "Receita", expense: "Despesa",
+                allCategories: "Todas", thDate: "Data", thGroup: "Grupo", thCategory: "Categoria", thType: "Tipo",
+                thNote: "Nota/Recibo", thAmount: "Valor", thAction: "Ação", modalTitle: "Adicionar", modalEditTitle: "Editar",
+                modalDate: "Data e Hora", modalType: "Tipo", modalCurrency: "Moeda", modalGroup: "Grupo",
+                modalCategory: "Categoria", modalAmount: "Valor", modalNote: "Nota", cancel: "Cancelar",
+                confirm: "Confirmar", save: "Salvar", importModalTitle: "Moeda",
+                importModalDesc: "Especifique a moeda:", loginTab: "Entrar", regTab: "Registrar",
+                usernameLabel: "Usuário", pwdLabel: "Senha", loginBtn: "Entrar", regTab: "Registrar",
+                changePwd: "Senha", logout: "Sair", oldPwd: "Antiga", newPwd: "Nova", confirmChange: "Confirmar",
+                batchDelete: "Excluir Selecionados", newCategoryBtn: "Novo Grupo", newCategoryTitle: "Adicionar Grupo", newCategoryDesc: "Adicionar categoria principal:",
+                receiptImage: "Imagem do Recibo", uploadImg: "Escolher Imagem"
+            },
+            ja: {
+                appTitle: "お小遣い帳", addTx: "記録する", import: "インポート", export: "エクスポート",
+                range: "期間", all: "すべて", today: "今日", week: "今週", month: "今月", year: "今年", to: "～",
+                baseCurrency: "基準:", totalIncome: "期間中総収入", totalExpenseBalance: "期間中総支出",
+                balance: "残高", convertedTotal: "換算合計:", convertedBalance: "残高", convertedNote: "リアルタイム換算", expCategoryChart: "支出カテゴリ別統計",
+                typeComparisonChart: "収支比較", allTypes: "すべて", income: "収入", expense: "支出",
+                allCategories: "すべてのカテゴリ", thDate: "日付", thGroup: "グループ", thCategory: "カテゴリ", thType: "種別",
+                thNote: "備考/レシート", thAmount: "金額", thAction: "操作", modalTitle: "新規記録", modalEditTitle: "編集",
+                modalDate: "日時", modalType: "種別", modalCurrency: "通貨", modalGroup: "グループ",
+                modalCategory: "カテゴリ", modalAmount: "金額", modalNote: "備考", cancel: "キャンセル",
+                confirm: "確認", save: "保存", importModalTitle: "通貨選択",
+                importModalDesc: "通貨を指定してください：", loginTab: "ログイン", regTab: "登録",
+                usernameLabel: "ユーザー名", pwdLabel: "パスワード", loginBtn: "ログイン", regTab: "登録する",
+                changePwd: "パスワード", logout: "ログアウト", oldPwd: "旧", newPwd: "新", confirmChange: "確認",
+                batchDelete: "一括削除", newCategoryBtn: "グループ追加", newCategoryTitle: "大類の追加", newCategoryDesc: "新しい大類名を入力してください：",
+                receiptImage: "レシート画像", uploadImg: "画像を選択"
+            },
+            ko: {
+                appTitle: "다중 통화 가계부", addTx: "기록", import: "가져오기", export: "내보내기",
+                range: "기간", all: "전체", today: "오늘", week: "이번 주", month: "이번 달", year: "올해", to: "~",
+                baseCurrency: "기준:", totalIncome: "총수입", totalExpenseBalance: "총지출",
+                balance: "잔액", convertedTotal: "환산 합계:", convertedBalance: "잔액", convertedNote: "실시간 환산됨", expCategoryChart: "카테고리별 지출",
+                typeComparisonChart: "수입 및 지출 비교", allTypes: "모든 유형", income: "수입", expense: "지출",
+                allCategories: "모든 카테고리", thDate: "날짜", thGroup: "그룹", thCategory: "카테고리", thType: "유형",
+                thNote: "메모/영수증", thAmount: "금액", thAction: "작업", modalTitle: "새 내역", modalEditTitle: "수정",
+                modalDate: "날짜 및 시간", modalType: "유형", modalCurrency: "통화", modalGroup: "그룹",
+                modalCategory: "카테고리", modalAmount: "금액", modalNote: "메모", cancel: "취소",
+                confirm: "확인", save: "저장", importModalTitle: "통화 선택",
+                importModalDesc: "통화를 지정하세요:", loginTab: "로그인", regTab: "회원가입",
+                usernameLabel: "사용자 이름", pwdLabel: "비밀번호", loginBtn: "로그인", regTab: "가입하기",
+                changePwd: "비밀번호", logout: "로그아웃", oldPwd: "기존", newPwd: "신규", confirmChange: "확인",
+                batchDelete: "선택 삭제", newCategoryBtn: "대분류 추가", newCategoryTitle: "대분류 추가", newCategoryDesc: "새로운 대분류 이름을 입력하세요:",
+                receiptImage: "영수증 이미지", uploadImg: "이미지 선택"
+            }
+        };
+
+        const exchangeRates = { 'CNY': 1.0, 'EUR': 7.8, 'USD': 7.2, 'GBP': 9.1, 'JPY': 0.048 };
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('appLang', lang);
+            const ls = document.getElementById('langSelect');
+            const als = document.getElementById('authLangSelect');
+            if (ls) ls.value = lang;
+            if (als) als.value = lang;
+            applyLanguage();
+        }
+
+        function applyLanguage() {
+            const dict = translations[currentLang] || translations.zh;
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (dict[key]) el.innerText = dict[key];
+            });
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                if (currentLang === 'en') searchInput.placeholder = "Search note/category...";
+                else searchInput.placeholder = "搜索备注/分类...";
+            }
+        }
+
+        function switchAuthMode(mode) {
+            authMode = mode;
+            const loginBtn = document.getElementById('tabLoginBtn');
+            const regBtn = document.getElementById('tabRegBtn');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            const dict = translations[currentLang] || translations.zh;
+            if (mode === 'login') {
+                if (loginBtn) loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
+                if (regBtn) regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition";
+                if (submitBtn) submitBtn.innerText = dict.loginBtn;
+            } else {
+                if (regBtn) regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
+                if (loginBtn) loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition";
+                if (submitBtn) submitBtn.innerText = dict.regBtn;
+            }
+        }
+
+        async function handleAuth(e) {
+            e.preventDefault();
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const errBox = document.getElementById('authErrorMsg');
+            const submitBtn = document.getElementById('authSubmitBtn');
+            if (errBox) errBox.classList.add('hidden');
+
+            if (!username || !password) return;
+            if (submitBtn) submitBtn.disabled = true;
+
+            try {
+                const endpoint = authMode === 'login' ? `${API_BASE}/login` : `${API_BASE}/register`;
+                const res = await fetch(endpoint, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.detail || "操作失败");
+
+                if (authMode === 'register') {
+                    alert('注册成功！请直接登录。');
+                    switchAuthMode('login');
+                    if (submitBtn) submitBtn.disabled = false;
+                    return;
+                }
+
+                currentUserId = username;
+                await fetchUserDataFromPostgres();
+                
+                const userDisp = document.getElementById('userDisplay');
+                if (userDisp) userDisp.innerText = username;
+                const authOv = document.getElementById('authOverlay');
+                if (authOv) authOv.classList.add('hidden');
+            } catch (err) {
+                console.error(err);
+                if (errBox) {
+                    errBox.innerText = err.message;
+                    errBox.classList.remove('hidden');
+                }
+                if (submitBtn) submitBtn.disabled = false;
+            }
+        }
+
+        async function fetchUserDataFromPostgres() {
+            try {
+                const res = await fetch(`${API_BASE}/ledgers/${currentUserId}`);
+                const data = await res.json();
+                if (data && data.content) {
+                    if (Array.isArray(data.content)) {
+                        transactions = data.content;
+                    } else if (data.content["默认账本"]) {
+                        transactions = data.content["默认账本"];
+                    } else {
+                        transactions = [];
+                    }
+                    if (data.content["_customCategories"]) {
+                        userCustomCategories = data.content["_customCategories"];
+                    }
+                } else {
+                    transactions = [];
+                }
+            } catch (err) {
+                console.error("加载数据失败", err);
+                transactions = [];
+            }
+            renderAll();
+        }
+
+        async function saveToPostgres() {
+            if (!currentUserId) return;
+            try {
+                await fetch(`${API_BASE}/ledgers`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ 
+                        user_id: currentUserId, 
+                        content: { 
+                            "默认账本": transactions,
+                            "_customCategories": userCustomCategories 
+                        } 
+                    })
+                });
+            } catch (err) {
+                console.error("同步到数据库失败", err);
+            }
+        }
+
+        function logout() {
+            currentUserId = "";
+            transactions = [];
+            const un = document.getElementById('authUsername');
+            const pw = document.getElementById('authPassword');
+            const ov = document.getElementById('authOverlay');
+            if (un) un.value = "";
+            if (pw) pw.value = "";
+            if (ov) ov.classList.remove('hidden');
+        }
+
+        function openPasswordModal() { 
+            const pm = document.getElementById('passwordModal');
+            if (pm) { pm.classList.remove('hidden'); pm.classList.add('flex'); }
+        }
+        function closePasswordModal() { 
+            const pm = document.getElementById('passwordModal');
+            if (pm) { pm.classList.remove('flex'); pm.classList.add('hidden'); }
+        }
+
+        async function changePassword(e) {
+            e.preventDefault();
+            const old_password = document.getElementById('oldPassword').value.trim();
+            const new_password = document.getElementById('newPassword').value.trim();
+            if (!old_password || !new_password) return;
+
+            try {
+                const res = await fetch(`${API_BASE}/change-password`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ username: currentUserId, old_password, new_password })
+                });
+                const result = await res.json();
+                if (!res.ok) throw new Error(result.detail || "修改密码失败");
+                
+                alert('密码修改成功！');
+                closePasswordModal();
+                document.getElementById('oldPassword').value = "";
+                document.getElementById('newPassword').value = "";
+            } catch (err) {
+                alert('错误: ' + err.message);
+            }
+        }
+
+        function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(uploadEvent) {
+                const base64Str = uploadEvent.target.result;
+                const base64Input = document.getElementById('txImageBase64');
+                const previewImg = document.getElementById('txImagePreview');
+                const previewCont = document.getElementById('imagePreviewContainer');
+                const fileNameSpan = document.getElementById('imageFileName');
+                const removeBtn = document.getElementById('removeImgBtn');
+
+                if (base64Input) base64Input.value = base64Str;
+                if (previewImg) previewImg.src = base64Str;
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (fileNameSpan) fileNameSpan.innerText = file.name;
+                if (removeBtn) removeBtn.classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function removeAttachedImage() {
+            const base64Input = document.getElementById('txImageBase64');
+            const previewImg = document.getElementById('txImagePreview');
+            const previewCont = document.getElementById('imagePreviewContainer');
+            const fileNameSpan = document.getElementById('imageFileName');
+            const removeBtn = document.getElementById('removeImgBtn');
+            const fileInput = document.getElementById('txImageFile');
+
+            if (base64Input) base64Input.value = '';
+            if (previewImg) previewImg.src = '';
+            if (previewCont) previewCont.classList.add('hidden');
+            if (fileNameSpan) fileNameSpan.innerText = '未选择文件';
+            if (removeBtn) removeBtn.classList.add('hidden');
+            if (fileInput) fileInput.value = '';
+        }
+
+        function previewFullImage(src) {
+            const srcImg = document.getElementById('previewImgSrc');
+            const modal = document.getElementById('imagePreviewModal');
+            if (srcImg) srcImg.src = src;
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function closeImagePreview() {
+            const modal = document.getElementById('imagePreviewModal');
+            if (modal) { modal.classList.remove('flex'); modal.classList.add('hidden'); }
+        }
+
+        function openNewCategoryModal() {
+            const input = document.getElementById('newCategoryNameInput');
+            const modal = document.getElementById('newCategoryModal');
+            if (input) input.value = '';
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeNewCategoryModal() {
+            const modal = document.getElementById('newCategoryModal');
+            if (modal) { modal.classList.remove('flex'); modal.classList.add('hidden'); }
+        }
+        function saveNewCategory() {
+            const catName = document.getElementById('newCategoryNameInput').value.trim();
+            const txType = document.getElementById('txType').value;
+            if (!catName) return alert('请输入大类名称');
+            if (!userCustomCategories[txType]) userCustomCategories[txType] = [];
+            if (userCustomCategories[txType].includes(catName)) {
+                alert('该大类已存在！');
+                return;
+            }
+            userCustomCategories[txType].push(catName);
+            saveToPostgres();
+            updateGroupDropdown(txType, catName);
+            closeNewCategoryModal();
+        }
+
+        function onTxTypeChange() {
+            const typeVal = document.getElementById('txType').value;
+            updateGroupDropdown(typeVal);
+        }
+
+        function updateGroupDropdown(typeVal, selectedVal = '') {
+            const groupSelect = document.getElementById('txGroup');
+            if (!groupSelect) return;
+            const categories = userCustomCategories[typeVal] || [];
+            groupSelect.innerHTML = categories.map(c => `<option value="${c}" ${c === selectedVal ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        function setDefaultDate() {
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            const dateEl = document.getElementById('txDate');
+            if (dateEl) dateEl.value = now.toISOString().slice(0, 16);
+        }
+        setDefaultDate();
+
+        function openModal() {
+            const editId = document.getElementById('txEditId');
+            const form = document.getElementById('transactionForm');
+            const txType = document.getElementById('txType');
+            const titleText = document.getElementById('modalTitleText');
+            const modal = document.getElementById('transactionModal');
+
+            if (editId) editId.value = '';
+            if (form) form.reset();
+            removeAttachedImage();
+            setDefaultDate();
+            if (txType) txType.value = '支出';
+            updateGroupDropdown('支出');
+            const dict = translations[currentLang] || translations.zh;
+            if (titleText) titleText.innerText = dict.modalTitle;
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function editTransaction(id) {
+            const tx = transactions.find(t => t.id === id);
+            if (!tx) return;
+            
+            const editId = document.getElementById('txEditId');
+            const dateEl = document.getElementById('txDate');
+            const txType = document.getElementById('txType');
+            const txCurr = document.getElementById('txCurrency');
+            const txCat = document.getElementById('txCategory');
+            const txAmt = document.getElementById('txAmount');
+            const txNote = document.getElementById('txNote');
+            const titleText = document.getElementById('modalTitleText');
+            const modal = document.getElementById('transactionModal');
+
+            if (editId) editId.value = tx.id;
+            let dateStr = tx.date.replace(' ', 'T');
+            if (dateStr.length > 16) dateStr = dateStr.slice(0, 16);
+            if (dateEl) dateEl.value = dateStr;
+            if (txType) txType.value = tx.type;
+            updateGroupDropdown(tx.type, tx.group);
+            if (txCurr) txCurr.value = tx.currency || 'CNY';
+            if (txCat) txCat.value = tx.category || '';
+            if (txAmt) txAmt.value = tx.amount;
+            if (txNote) txNote.value = tx.note || '';
+
+            if (tx.image) {
+                const base64Input = document.getElementById('txImageBase64');
+                const previewImg = document.getElementById('txImagePreview');
+                const previewCont = document.getElementById('imagePreviewContainer');
+                const fileNameSpan = document.getElementById('imageFileName');
+                const removeBtn = document.getElementById('removeImgBtn');
+
+                if (base64Input) base64Input.value = tx.image;
+                if (previewImg) previewImg.src = tx.image;
+                if (previewCont) previewCont.classList.remove('hidden');
+                if (fileNameSpan) fileNameSpan.innerText = '已附加凭证图片';
+                if (removeBtn) removeBtn.classList.remove('hidden');
+            } else {
+                removeAttachedImage();
+            }
+
+            const dict = translations[currentLang] || translations.zh;
+            if (titleText) titleText.innerText = dict.modalEditTitle;
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('transactionModal');
+            if (modal) { modal.classList.remove('flex'); modal.classList.add('hidden'); }
+        }
+
+        function updateBaseCurrency() {
+            const bc = document.getElementById('baseCurrency');
+            if (bc) baseCurrency = bc.value;
+            localStorage.setItem('baseCurrency', baseCurrency);
+            renderAll();
+        }
+
+        function setTimeRange(range) {
+            currentTimeRange = range;
+            ['all', 'today', 'week', 'month', 'year'].forEach(r => {
+                const btn = document.getElementById(`btn-${r}`);
+                if (btn) {
+                    if (r === range) {
+                        btn.className = "px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0";
+                    } else {
+                        btn.className = "px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0";
+                    }
+                }
+            });
+            filterTransactions();
+        }
+
+        function saveTransaction(e) {
+            e.preventDefault();
+            const editId = document.getElementById('txEditId').value;
+            const dateVal = document.getElementById('txDate').value.replace('T', ' ');
+            const groupVal = document.getElementById('txGroup').value;
+            const categoryVal = document.getElementById('txCategory').value;
+            const typeVal = document.getElementById('txType').value;
+            const currencyVal = document.getElementById('txCurrency').value;
+            const amountVal = parseFloat(document.getElementById('txAmount').value);
+            const noteVal = document.getElementById('txNote').value || '';
+            const imageVal = document.getElementById('txImageBase64').value || '';
+
+            if (editId) {
+                const index = transactions.findIndex(t => t.id === editId);
+                if (index !== -1) {
+                    transactions[index] = { ...transactions[index], date: dateVal, group: groupVal, category: categoryVal, type: typeVal, currency: currencyVal, amount: amountVal, note: noteVal, image: imageVal };
+                }
+            } else {
+                const newTx = { id: Date.now().toString(), date: dateVal, group: groupVal, category: categoryVal, type: typeVal, currency: currencyVal, amount: amountVal, note: noteVal, image: imageVal };
+                transactions.unshift(newTx);
+            }
+
+            saveAndRender();
+            closeModal();
+        }
+
+        function deleteTransaction(id) {
+            if (confirm('确定要删除这条账单吗？')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveAndRender();
+            }
+        }
+
+        function toggleSelectAll(master) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => cb.checked = master.checked);
+        }
+
+        function batchDeleteTransactions() {
+            const checkboxes = document.querySelectorAll('.row-checkbox:checked');
+            if (checkboxes.length === 0) {
+                alert('请先勾选需要删除的账单！');
+                return;
+            }
+            if (confirm(`确定要删除选中的 ${checkboxes.length} 条账单吗？`)) {
+                const idsToDelete = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
+                transactions = transactions.filter(t => !idsToDelete.includes(t.id));
+                const selectAll = document.getElementById('selectAllCheckbox');
+                if (selectAll) selectAll.checked = false;
+                saveAndRender();
+            }
+        }
+
+        function saveAndRender() {
+            saveToPostgres();
+            renderAll();
+        }
+
+        function renderAll() {
+            populateCategoryDropdown();
+            filterTransactions();
+        }
+
+        function populateCategoryDropdown() {
+            const select = document.getElementById('filterCategory');
+            if (!select) return;
+            const currentVal = select.value;
+            const categories = [...new Set(transactions.map(t => t.category))].filter(Boolean);
+            select.innerHTML = `<option value="">全部分类</option>` + 
+                categories.map(c => `<option value="${c}" ${c === currentVal ? 'selected' : ''}>${c}</option>`).join('');
+        }
+
+        function filterTransactions() {
+            const searchInput = document.getElementById('searchInput');
+            const filterTypeEl = document.getElementById('filterType');
+            const filterCategoryEl = document.getElementById('filterCategory');
+
+            const search = searchInput ? searchInput.value.toLowerCase() : '';
+            const filterType = filterTypeEl ? filterTypeEl.value : '';
+            const filterCategory = filterCategoryEl ? filterCategoryEl.value : '';
+
+            const now = new Date();
+            const todayStr = now.toISOString().slice(0, 10);
+
+            const filtered = transactions.filter(t => {
+                const matchSearch = (t.note && t.note.toLowerCase().includes(search)) || (t.category && t.category.toLowerCase().includes(search)) || (t.group && t.group.toLowerCase().includes(search));
+                const matchType = !filterType || t.type === filterType;
+                const matchCategory = !filterCategory || t.category === filterCategory;
+
+                let matchTime = true;
+                if (t.date) {
+                    const txDateOnly = t.date.slice(0, 10);
+                    if (currentTimeRange === 'today') {
+                        matchTime = (txDateOnly === todayStr);
+                    } else if (currentTimeRange === 'week') {
+                        const txDate = new Date(t.date);
+                        const firstDayOfWeek = new Date(now);
+                        firstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        firstDayOfWeek.setHours(0,0,0,0);
+                        matchTime = (txDate >= firstDayOfWeek);
+                    } else if (currentTimeRange === 'month') {
+                        matchTime = txDateOnly.startsWith(todayStr.slice(0, 7));
+                    } else if (currentTimeRange === 'year') {
+                        matchTime = txDateOnly.startsWith(todayStr.slice(0, 4));
+                    } else if (currentTimeRange === 'custom') {
+                        const start = document.getElementById('customStartDate').value;
+                        const end = document.getElementById('customEndDate').value;
+                        if (start && txDateOnly < start) matchTime = false;
+                        if (end && txDateOnly > end) matchTime = false;
+                    }
+                }
+                return matchSearch && matchType && matchCategory && matchTime;
+            });
+
+            renderTable(filtered);
+            updateSummaryAndCharts(filtered);
+        }
+
+        function convertToCNY(amount, currency) {
+            return amount * (exchangeRates[currency || 'CNY'] || 1.0);
+        }
+
+        function formatCurrency(amount, currency) {
+            return `${currency || 'CNY'} ${Number(amount).toFixed(2)}`;
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('transactionTable');
+            const txCountEl = document.getElementById('txCount');
+            const selectAllEl = document.getElementById('selectAllCheckbox');
+
+            if (txCountEl) txCountEl.innerText = `共 ${data.length} 笔交易`;
+            if (selectAllEl) selectAllEl.checked = false;
+
+            if (!tbody) return;
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-400 text-xs">暂无符合条件的账单数据</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = data.map(t => {
+                const isInc = t.type === '收入' || t.type === 'Income';
+                const hasImg = t.image && t.image.length > 0;
+                return `
+                <tr class="hover:bg-slate-50/80 transition">
+                    <td class="py-3 px-3 text-center">
+                        <input type="checkbox" class="row-checkbox rounded text-indigo-600 focus:ring-indigo-500" data-id="${t.id}">
+                    </td>
+                    <td class="py-3 px-3 text-xs text-slate-500">${t.date}</td>
+                    <td class="py-3 px-3 text-xs"><span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">${t.group || '-'}</span></td>
+                    <td class="py-3 px-3 font-medium text-slate-800">${t.category}</td>
+                    <td class="py-3 px-3">
+                        <span class="px-2.5 py-0.5 text-xs rounded-full font-medium ${isInc ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}">
+                            ${t.type}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-slate-500 text-xs">
+                        <div class="flex items-center gap-2">
+                            <span>${t.note || '-'}</span>
+                            ${hasImg ? `<img src="${t.image}" class="w-8 h-8 object-cover rounded-lg border border-slate-200 cursor-pointer shadow-xs shrink-0" onclick="previewFullImage('${t.image}')" title="点击查看凭证大图">` : ''}
+                        </div>
+                    </td>
+                    <td class="py-3 px-3 text-right font-semibold ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
+                        ${isInc ? '+' : '-'}${formatCurrency(t.amount, t.currency)}
+                    </td>
+                    <td class="py-3 px-3 text-center space-x-2">
+                        <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600 transition" title="编辑"><i class="fa-solid fa-pen-to-square text-xs"></i></button>
+                        <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-500 transition" title="删除"><i class="fa-solid fa-trash-can text-xs"></i></button>
+                    </td>
+                </tr>
+            `;}).join('');
+        }
+
+        // 核心更新：多币种独立列出 + 最终折算总计 (带有严格的非空检查)
+        function updateSummaryAndCharts(data) {
+            const targetCurrency = baseCurrency; 
+            const targetRate = exchangeRates[targetCurrency] || 1.0;
+
+            let incByCurr = {};
+            let expByCurr = {};
+            let totalIncConverted = 0;
+            let totalExpConverted = 0;
+            let expByCategory = {};
+
+            data.forEach(t => {
+                const curr = t.currency || 'CNY';
+                const amt = Number(t.amount) || 0;
+                const isInc = t.type === '收入' || t.type === 'Income';
+
+                if (isInc) {
+                    incByCurr[curr] = (incByCurr[curr] || 0) + amt;
+                } else {
+                    expByCurr[curr] = (expByCurr[curr] || 0) + amt;
+                }
+
+                const amountInCNY = convertToCNY(amt, curr);
+                const amountInBase = amountInCNY / targetRate;
+
+                if (isInc) {
+                    totalIncConverted += amountInBase;
+                } else {
+                    totalExpConverted += amountInBase;
+                    expByCategory[t.category] = (expByCategory[t.category] || 0) + amountInBase;
+                }
+            });
+
+            // 渲染收入各币种明细
+            const incDiv = document.getElementById('incomeBreakdown');
+            if (incDiv) {
+                if (Object.keys(incByCurr).length === 0) {
+                    incDiv.innerHTML = `<span class="text-xs text-slate-400 font-normal">无收入记录</span>`;
+                } else {
+                    incDiv.innerHTML = Object.entries(incByCurr).map(([curr, val]) => `
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500">${curr}:</span>
+                            <span class="font-bold text-emerald-600">+ ${curr} ${val.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 渲染支出各币种明细
+            const expDiv = document.getElementById('expenseBreakdown');
+            if (expDiv) {
+                if (Object.keys(expByCurr).length === 0) {
+                    expDiv.innerHTML = `<span class="text-xs text-slate-400 font-normal">无支出记录</span>`;
+                } else {
+                    expDiv.innerHTML = Object.entries(expByCurr).map(([curr, val]) => `
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500">${curr}:</span>
+                            <span class="font-bold text-rose-600">- ${curr} ${val.toFixed(2)}</span>
+                        </div>
+                    `).join('');
+                }
+            }
+
+            // 渲染折算总计
+            const symbol = targetCurrency === 'CNY' ? '¥' : (targetCurrency === 'EUR' ? '€' : (targetCurrency === 'USD' ? '$' : (targetCurrency === 'GBP' ? '£' : '¥')));
+            
+            const incConv = document.getElementById('totalIncomeConverted');
+            if (incConv) incConv.innerText = `${symbol} ${totalIncConverted.toFixed(2)}`;
+
+            const expConv = document.getElementById('totalExpenseConverted');
+            if (expConv) expConv.innerText = `${symbol} ${totalExpConverted.toFixed(2)}`;
+            
+            const netConverted = totalIncConverted - totalExpConverted;
+            const balanceElem = document.getElementById('netBalanceConverted');
+            if (balanceElem) {
+                balanceElem.innerText = `${symbol} ${netConverted.toFixed(2)}`;
+                balanceElem.className = netConverted >= 0 ? 'text-xl font-bold text-indigo-600' : 'text-xl font-bold text-rose-600';
+            }
+
+            renderCharts(expByCategory, totalIncConverted, totalExpConverted, symbol);
+        }
+
+        function renderCharts(expByCategory, totalInc, totalExp, symbol) {
+            const expCtx = document.getElementById('expenseCategoryChart');
+            if (!expCtx) return;
+            
+            const categories = Object.keys(expByCategory);
+            const amounts = Object.values(expByCategory);
+
+            if (expenseChart) expenseChart.destroy();
+            expenseChart = new Chart(expCtx.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: categories.length ? categories : ['暂无支出'],
+                    datasets: [{ data: amounts.length ? amounts : [1], backgroundColor: ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6', '#14b8a6', '#f43f5e'] }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+
+            const typeCtx = document.getElementById('typeComparisonChart');
+            if (!typeCtx) return;
+
+            if (typeChart) typeChart.destroy();
+            typeChart = new Chart(typeCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: ['总收入', '总支出'],
+                    datasets: [{ data: [totalInc, totalExp], backgroundColor: ['#10b981', '#f43f5e'], borderRadius: 6 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+            });
+        }
+
+        function parseExcelDate(serial) {
+            if (!serial) return new Date().toISOString().slice(0, 19).replace('T', ' ');
+            if (typeof serial === 'string' && isNaN(Number(serial))) return serial;
+            const num = Number(serial);
+            if (isNaN(num)) return String(serial);
+            const utc_days = Math.floor(num - 25569);
+            const date_info = new Date(utc_days * 86400 * 1000);
+            return date_info.toISOString().slice(0, 19).replace('T', ' ');
+        }
+
+        function exportExcel() {
+            if (transactions.length === 0) { alert('没有数据可导出！'); return; }
+            const exportData = transactions.map(t => ({ "日期": t.date, "分类筛选": t.group, "记账分类": t.category, "收支类型": t.type, "备注": t.note, "金额": t.amount, "币种": t.currency || 'CNY' }));
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "Transactions");
+            XLSX.writeFile(workbook, `expense_tracker_${new Date().toISOString().slice(0,10)}.xlsx`);
+        }
+
+        function exportJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(transactions, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `personal_finance_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+        }
+
+        function promptImportCurrency(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            pendingImportFile = file;
+            const im = document.getElementById('importModal');
+            if (im) { im.classList.remove('hidden'); im.classList.add('flex'); }
+            event.target.value = '';
+        }
+
+        function cancelImport() {
+            pendingImportFile = null;
+            const im = document.getElementById('importModal');
+            if (im) { im.classList.remove('flex'); im.classList.add('hidden'); }
+        }
+
+        function confirmImport() {
+            if (!pendingImportFile) { cancelImport(); return; }
+            const curSel = document.getElementById('importCurrencySelect');
+            const selectedCurrency = curSel ? curSel.value : 'CNY';
+            const file = pendingImportFile;
+            cancelImport();
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
+                    if (jsonRows.length < 2) { alert('文件内容为空！'); return; }
+
+                    let header = jsonRows[0];
+                    let dateIdx = header.findIndex(h => h && String(h).includes('日期')) !== -1 ? header.findIndex(h => h && String(h).includes('日期')) : 0;
+                    let groupIdx = header.findIndex(h => h && String(h).includes('分类筛选')) !== -1 ? header.findIndex(h => h && String(h).includes('分类筛选')) : 1;
+                    let catIdx = header.findIndex(h => h && String(h).includes('记账分类')) !== -1 ? header.findIndex(h => h && String(h).includes('记账分类')) : 2;
+                    let typeIdx = header.findIndex(h => h && String(h).includes('收支')) !== -1 ? header.findIndex(h => h && String(h).includes('收支')) : 3;
+                    let noteIdx = header.findIndex(h => h && String(h).includes('备注')) !== -1 ? header.findIndex(h => h && String(h).includes('备注')) : 4;
+                    let amtIdx = header.findIndex(h => h && String(h).includes('金额')) !== -1 ? header.findIndex(h => h && String(h).includes('金额')) : 5;
+
+                    const newTxs = [];
+                    for (let i = 1; i < jsonRows.length; i++) {
+                        const row = jsonRows[i];
+                        if (!row || row.length === 0) continue;
+                        if (row[dateIdx] !== undefined && row[dateIdx] !== null) {
+                            newTxs.push({
+                                id: 'imp_' + Date.now() + '_' + i,
+                                date: parseExcelDate(row[dateIdx]),
+                                group: row[groupIdx] !== undefined ? String(row[groupIdx]) : "Other",
+                                category: row[catIdx] !== undefined ? String(row[catIdx]) : "Uncategorized",
+                                type: row[typeIdx] !== undefined ? String(row[typeIdx]) : "支出",
+                                currency: row[6] !== undefined ? String(row[6]) : selectedCurrency,
+                                amount: parseFloat(row[amtIdx] || 0),
+                                note: row[noteIdx] !== undefined ? String(row[noteIdx]) : "",
+                                image: ""
+                            });
+                        }
+                    }
+                    if (newTxs.length > 0) {
+                        transactions = [...newTxs, ...transactions];
+                        saveAndRender();
+                        alert(`成功导入 ${newTxs.length} 条记录！`);
+                    } else {
+                        alert('未读取到有效数据。');
+                    }
+                } catch (err) {
+                    alert('导入失败，请检查文件格式！');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        applyLanguage();
+    </script>
+</body>
+</html>
