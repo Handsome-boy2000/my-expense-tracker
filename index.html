@@ -6,7 +6,7 @@
     <title>多币种个人记账本</title>
     <!-- Tailwind CSS v3 CDN -->
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/lib/index.min.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://tailwindcss.com"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS (xlsx) for Excel import/export -->
@@ -687,8 +687,16 @@
                 }
 
                 currentUserId = username;
-                sessionToken = result.token; // 保存单设备排他 Token
-                await fetchUserDataFromPostgres();
+                sessionToken = result.token; 
+                
+                // 确保无论后端账单加载成败，遮罩层绝对强制隐藏，彻底解决卡死
+                try {
+                    await fetchUserDataFromPostgres();
+                } catch (loadErr) {
+                    console.error("加载账单数据出错，已采用默认空账单容错", loadErr);
+                    transactions = [];
+                    renderAll();
+                }
                 
                 const userDisp = document.getElementById('userDisplay');
                 const userAvatar = document.getElementById('userAvatarText');
@@ -703,6 +711,7 @@
                     errBox.innerText = err.message;
                     errBox.classList.remove('hidden');
                 }
+            } finally {
                 if (submitBtn) submitBtn.disabled = false;
             }
         }
