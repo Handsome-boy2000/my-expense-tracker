@@ -64,7 +64,6 @@
                             <i id="authPwdIcon" class="fa-solid fa-eye text-xs"></i>
                         </button>
                     </div>
-                    <p id="pwdTip" class="text-[11px] text-slate-400 mt-1 hidden" data-i18n="pwdTipText">密码需不少于8位，包含大小写字母、数字和特殊字符</p>
                 </div>
                 <div id="authErrorMsg" class="text-xs text-rose-500 hidden font-medium text-center"></div>
                 <button type="submit" id="authSubmitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-200 text-sm" data-i18n="loginBtn">立即登录</button>
@@ -72,7 +71,7 @@
         </div>
     </div>
 
-    <!-- 顶栏：沉浸式 FinTech App 风格 -->
+    <!-- 顶栏 -->
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40 py-3">
         <div class="max-w-md mx-auto px-4 flex flex-col gap-3">
             <div class="flex items-center justify-between">
@@ -126,8 +125,8 @@
         </div>
     </header>
 
-    <!-- 主体多视图容器 (严格遵循图4的 5 标签独立分栏) -->
-    <main class="max-w-md mx-auto px-4 py-3 space-y-3 pb-20">
+    <!-- 主体多视图容器 -->
+    <main class="max-w-md mx-auto px-4 py-3 space-y-3 pb-24">
 
         <!-- ================= 视图 1：记账页 (Home) ================= -->
         <div id="view-home" class="space-y-3">
@@ -150,7 +149,10 @@
             <!-- 筛选与账单卡片列表区块 -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
                 <div class="flex items-center justify-between">
-                    <h3 class="text-xs font-bold text-slate-700 tracking-wide uppercase" data-i18n="transactionsTitle">账单明细</h3>
+                    <div class="flex items-center gap-2">
+                        <input type="checkbox" id="selectAllCheckbox" onclick="toggleSelectAll(this)" class="rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4 cursor-pointer">
+                        <label for="selectAllCheckbox" class="text-xs font-bold text-slate-700 tracking-wide uppercase cursor-pointer" data-i18n="selectAll">全选</label>
+                    </div>
                     <div class="flex items-center gap-2">
                         <span id="txCount" class="text-[11px] text-slate-400">共 0 笔</span>
                         <button onclick="batchDeleteTransactions()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1">
@@ -175,18 +177,41 @@
             </div>
         </div>
 
-        <!-- ================= 视图 2：报表页 (Analytics - 模仿图2和图3高颜值报表) ================= -->
+        <!-- ================= 视图 2：报表页 (Analytics - 增加自定义日期区间) ================= -->
         <div id="view-analytics" class="space-y-3 hidden">
-            <!-- 切换支出/收入及主分类/子分类 -->
+            <!-- 报表独立时间范围选择条 -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="analyticsTimeRange">报表时间范围</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                    <button onclick="setAnalyticsTimeRange('all')" id="anal-btn-all" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
+                    <button onclick="setAnalyticsTimeRange('today')" id="anal-btn-today" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
+                    <button onclick="setAnalyticsTimeRange('week')" id="anal-btn-week" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
+                    <button onclick="setAnalyticsTimeRange('month')" id="anal-btn-month" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
+                    <button onclick="setAnalyticsTimeRange('year')" id="anal-btn-year" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
+                    <button onclick="setAnalyticsTimeRange('custom')" id="anal-btn-custom" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="customRange">自定义</button>
+                </div>
+                <!-- 自定义日期选择器容器 (默认隐藏，点击自定义时展开) -->
+                <div id="customDateBox" class="hidden pt-2 flex items-center gap-2 text-xs">
+                    <input type="date" id="analStartDate" onchange="updateAnalyticsData()" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
+                    <span class="text-slate-400" data-i18n="to">至</span>
+                    <input type="date" id="analEndDate" onchange="updateAnalyticsData()" class="bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none">
+                </div>
+            </div>
+
+            <!-- 报表独立收支类型切换 -->
             <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
                 <div class="flex bg-slate-100 p-0.5 rounded-xl text-xs font-bold">
-                    <button onclick="switchChartType('expense')" id="btnChartExp" class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
-                    <button onclick="switchChartType('income')" id="btnChartInc" class="px-3 py-1.5 rounded-lg text-slate-500 transition" data-i18n="income">收入</button>
+                    <button onclick="switchAnalyticsChartType('expense')" id="btnChartExp" class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
+                    <button onclick="switchAnalyticsChartType('income')" id="btnChartInc" class="px-3 py-1.5 rounded-lg text-slate-500 transition" data-i18n="income">收入</button>
                 </div>
                 <h3 id="chartTitleText" class="text-xs font-bold text-slate-700" data-i18n="expCategoryChart">支出分类构成</h3>
             </div>
 
-            <!-- 模仿图2的优雅甜甜圈大图 -->
+            <!-- 甜甜圈环形图 -->
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                 <div class="relative h-56 flex items-center justify-center">
                     <canvas id="categoryChart"></canvas>
@@ -203,7 +228,7 @@
                 </div>
             </div>
 
-            <!-- 模仿图2下方的精细分类明细卡片列表 -->
+            <!-- 分类排行明细列表 -->
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
                 <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider" data-i18n="categoryBreakdownList">分类排行明细</h3>
                 <div id="analyticsCategoryList" class="space-y-2"></div>
@@ -214,7 +239,7 @@
         <div id="view-explore" class="space-y-3 hidden">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
                 <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                    <i class="fa-solid fa-earth-americas text-indigo-500"></i> 实时多币种汇率参考 (基准 CNY)
+                    <i class="fa-solid fa-earth-americas text-indigo-500"></i> 实时主流多币种汇率参考 (基准 CNY)
                 </h3>
                 <div class="grid grid-cols-2 gap-2 text-xs">
                     <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
@@ -233,13 +258,36 @@
                         <span class="font-semibold text-slate-600">🇯🇵 日元 (JPY)</span>
                         <span class="font-bold text-indigo-600">0.048 CNY</span>
                     </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇭🇰 港币 (HKD)</span>
+                        <span class="font-bold text-indigo-600">0.92 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇰🇷 韩元 (KRW)</span>
+                        <span class="font-bold text-indigo-600">0.0053 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇦🇺 澳元 (AUD)</span>
+                        <span class="font-bold text-indigo-600">4.75 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇨🇦 加元 (CAD)</span>
+                        <span class="font-bold text-indigo-600">5.30 CNY</span>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- ================= 视图 4：设置页 (Settings - 严格对标图5) ================= -->
-        <div id="view-settings" class="space-y-2.5">
+        <!-- ================= 视图 4：设置页 (Settings - 增加记账分类管理入口) ================= -->
+        <div id="view-settings" class="space-y-2.5 hidden">
             <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                <button onclick="openCategoryManagerModal()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm"><i class="fa-solid fa-list-check"></i></div>
+                        <span class="text-xs font-bold text-slate-700" data-i18n="categoryManager">记账分类管理</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
                 <button onclick="openPasswordModal()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition text-left">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm"><i class="fa-solid fa-key"></i></div>
@@ -263,7 +311,7 @@
                 </button>
             </div>
 
-            <!-- 极度醒目的安全退出按钮 (严格符合用户需求) -->
+            <!-- 安全退出按钮 -->
             <div class="pt-2">
                 <button onclick="logout()" class="w-full py-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-2xl shadow-sm transition flex items-center justify-center gap-2 text-xs">
                     <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">安全退出当前账号</span>
@@ -273,19 +321,22 @@
 
     </main>
 
-    <!-- 底部固定 5 键原生 App 导航栏 (严格对标图4) -->
+    <!-- 底部固定 5 键原生 App 导航栏 -->
     <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 py-2 px-4 flex justify-around items-center text-slate-400">
-        <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 text-indigo-600 transition">
+        <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 text-indigo-600 font-bold transition">
             <i class="fa-solid fa-wallet text-base"></i>
-            <span class="text-[10px] font-bold" data-i18n="navHome">记账</span>
+            <span class="text-[10px]" data-i18n="navHome">记账</span>
         </button>
         <button onclick="switchTab('analytics')" id="nav-analytics" class="flex flex-col items-center gap-1 hover:text-slate-600 transition">
             <i class="fa-solid fa-chart-pie text-base"></i>
             <span class="text-[10px] font-medium" data-i18n="navAnalytics">报表</span>
         </button>
-        <!-- 中间凸出悬浮的“记一笔”大圆钮 -->
-        <button onclick="openModal()" class="w-13 h-13 -mt-6 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-300 flex items-center justify-center text-xl hover:bg-indigo-700 transition active:scale-90">
-            <i class="fa-solid fa-plus"></i>
+        <!-- 中间凸出悬浮的“记一笔”带文字大圆钮 -->
+        <button onclick="openModal()" class="flex flex-col items-center -mt-5 group">
+            <div class="w-12 h-12 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-300 flex items-center justify-center text-lg hover:bg-indigo-700 transition active:scale-90">
+                <i class="fa-solid fa-plus"></i>
+            </div>
+            <span class="text-[10px] font-bold text-indigo-600 mt-0.5" data-i18n="addTx">记一笔</span>
         </button>
         <button onclick="switchTab('explore')" id="nav-explore" class="flex flex-col items-center gap-1 hover:text-slate-600 transition">
             <i class="fa-solid fa-compass text-base"></i>
@@ -296,6 +347,29 @@
             <span class="text-[10px] font-medium" data-i18n="navSettings">设置</span>
         </button>
     </nav>
+
+    <!-- 记账分类管理弹窗 (新增功能) -->
+    <div id="categoryManagerModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-4 max-h-[85vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-800 text-base" data-i18n="categoryManager">记账分类管理</h3>
+                <button onclick="closeCategoryManagerModal()" class="text-slate-400 hover:text-slate-600 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-slate-100 transition"><i class="fa-solid fa-xmark text-base"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <div>
+                    <label class="block font-bold text-slate-700 mb-1" data-i18n="expenseCategories">支出分类</label>
+                    <div id="expenseCategoryListContainer" class="space-y-2"></div>
+                </div>
+                <div class="pt-2 border-t border-slate-100">
+                    <label class="block font-bold text-slate-700 mb-1" data-i18n="incomeCategories">收入分类</label>
+                    <div id="incomeCategoryListContainer" class="space-y-2"></div>
+                </div>
+            </div>
+            <div class="pt-3 flex justify-end">
+                <button onclick="closeCategoryManagerModal()" class="px-4 py-2 text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition shadow-md shadow-indigo-100" data-i18n="confirm">完成</button>
+            </div>
+        </div>
+    </div>
 
     <!-- 图片查看大图弹窗 -->
     <div id="imagePreviewModal" onclick="closeImagePreview()" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-50 p-4 cursor-pointer">
@@ -462,7 +536,8 @@
         if (baseCurrSelect) baseCurrSelect.value = baseCurrency;
 
         let currentTimeRange = 'all';
-        let currentChartMode = 'expense';
+        let analyticsTimeRange = 'all'; // 报表独立时间范围
+        let currentChartMode = 'expense'; // 报表独立收支筛选
         let categoryChart = null;
         let typeChart = null;
         let pendingImportFile = null;
@@ -477,7 +552,7 @@
         const translations = {
             zh: {
                 appTitle: "多币种个人记账本", addTx: "记一笔", import: "导入", export: "导出",
-                range: "时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", to: "至",
+                range: "时间范围", analyticsTimeRange: "报表时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", customRange: "自定义", to: "至",
                 baseCurrency: "折算基准:", totalIncome: "总收入", totalExpenseBalance: "总支出",
                 balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类构成", incCategoryChart: "收入分类构成",
                 typeComparisonChart: "收支类型对比 (折算后)", allTypes: "全部类型", income: "收入", expense: "支出",
@@ -489,14 +564,14 @@
                 importModalDesc: "请为本次导入的所有账单指定币种：", loginTab: "登录账号", regTab: "注册新账号",
                 usernameLabel: "用户名 / 账号", pwdLabel: "密码", loginBtn: "立即登录", regBtn: "立即注册",
                 changePwd: "修改登录密码", logout: "安全退出当前账号", oldPwd: "原密码", newPwd: "新密码", confirmChange: "确认修改",
-                batchDelete: "批量删除", newCategoryBtn: "新增大类", newCategoryTitle: "新增自定义大类", newCategoryDesc: "为当前收支类型添加一个新的专属大类：",
+                batchDelete: "批量删除", selectAll: "全选", newCategoryBtn: "新增大类", newCategoryTitle: "新增自定义大类", newCategoryDesc: "为当前收支类型添加一个新的专属大类：",
                 receiptImage: "账单凭证图片 (小票/发票)", uploadImg: "选择图片",
                 pwdTipText: "密码需不少于8位，包含大小写字母、数字和特殊字符",
-                welcomeBack: "欢迎回来", transactionsTitle: "账单明细", navHome: "记账", navAnalytics: "报表", navExplore: "发现", navSettings: "设置", categoryBreakdownList: "分类排行明细"
+                welcomeBack: "欢迎回来", transactionsTitle: "账单明细", navHome: "记账", navAnalytics: "报表", navExplore: "发现", navSettings: "设置", categoryBreakdownList: "分类排行明细", categoryManager: "记账分类管理", expenseCategories: "支出大类", incomeCategories: "收入大类"
             },
             "zh-TW": {
                 appTitle: "多幣種個人記帳本", addTx: "記一筆", import: "匯入", export: "匯出",
-                range: "時間範圍", all: "全部", today: "今日", week: "本週", month: "本月", year: "本年", to: "至",
+                range: "時間範圍", analyticsTimeRange: "報表時間範圍", all: "全部", today: "今日", week: "本週", month: "本月", year: "本年", customRange: "自定義", to: "至",
                 baseCurrency: "基準:", totalIncome: "總收入", totalExpenseBalance: "總支出",
                 balance: "結餘", convertedTotal: "折算總計:", convertedBalance: "折算淨結餘 (實時)", convertedNote: "已按當前基準幣種實時折算", expCategoryChart: "支出分類構成", incCategoryChart: "收入分類構成",
                 typeComparisonChart: "收支類型對比", allTypes: "全部類型", income: "收入", expense: "支出",
@@ -508,14 +583,14 @@
                 importModalDesc: "請為本次匯入的所有帳單指定幣種：", loginTab: "登入帳號", regTab: "註冊新帳號",
                 usernameLabel: "用戶名 / 帳號", pwdLabel: "密碼", loginBtn: "立即登入", regTab: "立即註冊",
                 changePwd: "修改登入密碼", logout: "安全退出當前帳號", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
-                batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個專屬大類：",
+                batchDelete: "批量刪除", selectAll: "全選", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個專屬大類：",
                 receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片",
                 pwdTipText: "密碼需不少於8位，包含大小寫字母、數字和特殊字符",
-                welcomeBack: "歡迎回來", transactionsTitle: "帳單明細", navHome: "記帳", navAnalytics: "報表", navExplore: "發現", navSettings: "設定", categoryBreakdownList: "分類排行明細"
+                welcomeBack: "歡迎回來", transactionsTitle: "帳單明細", navHome: "記帳", navAnalytics: "報表", navExplore: "發現", navSettings: "設定", categoryBreakdownList: "分類排行明細", categoryManager: "記帳分類管理", expenseCategories: "支出大類", incomeCategories: "收入大類"
             },
             en: {
                 appTitle: "Multi-Currency Tracker", addTx: "Add", import: "Import", export: "Export",
-                range: "Range", all: "All", today: "Today", week: "Week", month: "Month", year: "Year", to: "to",
+                range: "Range", analyticsTimeRange: "Analytics Range", all: "All", today: "Today", week: "Week", month: "Month", year: "Year", customRange: "Custom", to: "to",
                 baseCurrency: "Base:", totalIncome: "Total Income", totalExpenseBalance: "Total Expense",
                 balance: "Balance", convertedTotal: "Converted Total:", convertedBalance: "Net Balance (Real-time)", convertedNote: "Real-time converted", expCategoryChart: "Expense Breakdown", incCategoryChart: "Income Breakdown",
                 typeComparisonChart: "Income vs Expense", allTypes: "All Types", income: "Income", expense: "Expense",
@@ -527,16 +602,15 @@
                 importModalDesc: "Specify currency for imported records:", loginTab: "Login", regTab: "Register",
                 usernameLabel: "Username", pwdLabel: "Password", loginBtn: "Login Now", regTab: "Register Now",
                 changePwd: "Change Password", logout: "Logout", oldPwd: "Old Password", newPwd: "New Password", confirmChange: "Confirm",
-                batchDelete: "Batch Delete", newCategoryBtn: "New Group", newCategoryTitle: "Add Custom Group", newCategoryDesc: "Add a new exclusive main category for current type:",
+                batchDelete: "Batch Delete", selectAll: "Select All", newCategoryBtn: "New Group", newCategoryTitle: "Add Custom Group", newCategoryDesc: "Add a new exclusive main category for current type:",
                 receiptImage: "Receipt Image (Invoice/Ticket)", uploadImg: "Choose Image",
                 pwdTipText: "Password must be at least 8 chars with uppercase, lowercase, number & special char",
-                welcomeBack: "Welcome back", transactionsTitle: "Transactions", navHome: "Home", navAnalytics: "Analytics", navExplore: "Explore", navSettings: "Settings", categoryBreakdownList: "Category Ranking"
+                welcomeBack: "Welcome back", transactionsTitle: "Transactions", navHome: "Home", navAnalytics: "Analytics", navExplore: "Explore", navSettings: "Settings", categoryBreakdownList: "Category Ranking", categoryManager: "Category Manager", expenseCategories: "Expense Groups", incomeCategories: "Income Groups"
             }
         };
 
-        const exchangeRates = { 'CNY': 1.0, 'EUR': 7.8, 'USD': 7.2, 'GBP': 9.1, 'JPY': 0.048 };
+        const exchangeRates = { 'CNY': 1.0, 'EUR': 7.8, 'USD': 7.2, 'GBP': 9.1, 'JPY': 0.048, 'HKD': 0.92, 'KRW': 0.0053, 'AUD': 4.75, 'CAD': 5.30 };
 
-        // 底部 5 键视图切换核心函数
         function switchTab(tabName) {
             ['home', 'analytics', 'explore', 'settings'].forEach(t => {
                 const view = document.getElementById(`view-${t}`);
@@ -762,6 +836,70 @@
             if (pm) { pm.classList.remove('flex'); pm.classList.add('hidden'); }
         }
 
+        // 分类管理弹窗控制
+        function openCategoryManagerModal() {
+            renderCategoryManagerList();
+            const modal = document.getElementById('categoryManagerModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+        function closeCategoryManagerModal() {
+            const modal = document.getElementById('categoryManagerModal');
+            if (modal) { modal.classList.remove('flex'); modal.classList.add('hidden'); }
+            updateGroupDropdown(document.getElementById('txType').value);
+        }
+
+        function renderCategoryManagerList() {
+            const expContainer = document.getElementById('expenseCategoryListContainer');
+            const incContainer = document.getElementById('incomeCategoryListContainer');
+            if (!expContainer || !incContainer) return;
+
+            expContainer.innerHTML = (userCustomCategories["支出"] || []).map((cat, idx) => `
+                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input type="text" value="${cat}" onchange="updateCategoryName('支出', ${idx}, this.value)" class="bg-transparent font-medium text-slate-700 text-xs focus:outline-none w-full">
+                    <button onclick="deleteCustomCategory('支出', ${idx})" class="text-rose-400 hover:text-rose-600 p-1 shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>
+            `).join('') + `<button onclick="addCustomCategoryPrompt('支出')" class="w-full py-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-xs hover:bg-indigo-100 transition mt-1">+ 添加支出大类</button>`;
+
+            incContainer.innerHTML = (userCustomCategories["收入"] || []).map((cat, idx) => `
+                <div class="flex items-center justify-between bg-slate-50 p-2 rounded-xl border border-slate-100">
+                    <input type="text" value="${cat}" onchange="updateCategoryName('收入', ${idx}, this.value)" class="bg-transparent font-medium text-slate-700 text-xs focus:outline-none w-full">
+                    <button onclick="deleteCustomCategory('收入', ${idx})" class="text-rose-400 hover:text-rose-600 p-1 shrink-0"><i class="fa-solid fa-trash text-xs"></i></button>
+                </div>
+            `).join('') + `<button onclick="addCustomCategoryPrompt('收入')" class="w-full py-2 bg-indigo-50 text-indigo-600 rounded-xl font-bold text-xs hover:bg-indigo-100 transition mt-1">+ 添加收入大类</button>`;
+        }
+
+        function updateCategoryName(type, idx, newVal) {
+            const name = newVal.trim();
+            if (!name) return alert('分类名称不能为空');
+            userCustomCategories[type][idx] = name;
+            saveToPostgres();
+        }
+
+        function deleteCustomCategory(type, idx) {
+            if (userCustomCategories[type].length <= 1) {
+                alert('至少保留一个大类！');
+                return;
+            }
+            if (confirm('确定要删除这个分类吗？')) {
+                userCustomCategories[type].splice(idx, 1);
+                saveToPostgres();
+                renderCategoryManagerList();
+            }
+        }
+
+        function addCustomCategoryPrompt(type) {
+            const name = prompt(`请输入新的${type}大类名称：`);
+            if (!name) return;
+            const trimmed = name.trim();
+            if (!userCustomCategories[type].includes(trimmed)) {
+                userCustomCategories[type].push(trimmed);
+                saveToPostgres();
+                renderCategoryManagerList();
+            } else {
+                alert('该分类已存在！');
+            }
+        }
+
         async function changePassword(e) {
             e.preventDefault();
             const old_password = document.getElementById('oldPassword').value.trim();
@@ -936,6 +1074,7 @@
             renderAll();
         }
 
+        // 记账栏时间范围切换
         function setTimeRange(range) {
             currentTimeRange = range;
             ['all', 'today', 'week', 'month', 'year'].forEach(r => {
@@ -947,7 +1086,28 @@
             filterTransactions();
         }
 
-        function switchChartType(mode) {
+        // 报表栏独立时间范围切换 (支持自定义)
+        function setAnalyticsTimeRange(range) {
+            analyticsTimeRange = range;
+            ['all', 'today', 'week', 'month', 'year', 'custom'].forEach(r => {
+                const btn = document.getElementById(`anal-btn-${r}`);
+                if (btn) {
+                    btn.className = r === range ? "px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" : "px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0";
+                }
+            });
+            const customBox = document.getElementById('customDateBox');
+            if (range === 'custom') {
+                customBox.classList.remove('hidden');
+                customBox.classList.add('flex');
+            } else {
+                customBox.classList.remove('flex');
+                customBox.classList.add('hidden');
+            }
+            updateAnalyticsData();
+        }
+
+        // 报表栏独立收支类型切换
+        function switchAnalyticsChartType(mode) {
             currentChartMode = mode;
             const btnExp = document.getElementById('btnChartExp');
             const btnInc = document.getElementById('btnChartInc');
@@ -963,7 +1123,7 @@
                 btnExp.className = "px-3 py-1.5 rounded-lg text-slate-500 transition";
                 title.innerText = dict.incCategoryChart;
             }
-            filterTransactions();
+            updateAnalyticsData();
         }
 
         function saveTransaction(e) {
@@ -999,6 +1159,13 @@
             }
         }
 
+        function toggleSelectAll(masterCheckbox) {
+            const checkboxes = document.querySelectorAll('.row-checkbox');
+            checkboxes.forEach(cb => {
+                cb.checked = masterCheckbox.checked;
+            });
+        }
+
         function batchDeleteTransactions() {
             const checkboxes = document.querySelectorAll('.row-checkbox:checked');
             if (checkboxes.length === 0) {
@@ -1008,6 +1175,8 @@
             if (confirm(`确定要删除选中的 ${checkboxes.length} 条账单吗？`)) {
                 const idsToDelete = Array.from(checkboxes).map(cb => cb.getAttribute('data-id'));
                 transactions = transactions.filter(t => !idsToDelete.includes(t.id));
+                const master = document.getElementById('selectAllCheckbox');
+                if (master) master.checked = false;
                 saveAndRender();
             }
         }
@@ -1019,6 +1188,7 @@
 
         function renderAll() {
             filterTransactions();
+            updateAnalyticsData();
         }
 
         function filterTransactions() {
@@ -1052,7 +1222,76 @@
             });
 
             renderCardList(filtered);
-            updateSummaryAndCharts(filtered);
+            updateGlobalSummary(transactions);
+        }
+
+        // 报表独立数据计算（支持自定义日期区间及金额降序排列）
+        function updateAnalyticsData() {
+            const now = new Date();
+            const todayStr = now.toISOString().slice(0, 10);
+            const startInput = document.getElementById('analStartDate').value;
+            const endInput = document.getElementById('analEndDate').value;
+
+            const filtered = transactions.filter(t => {
+                let matchTime = true;
+                if (t.date) {
+                    const txDateOnly = t.date.slice(0, 10);
+                    if (analyticsTimeRange === 'today') {
+                        matchTime = (txDateOnly === todayStr);
+                    } else if (analyticsTimeRange === 'week') {
+                        const txDate = new Date(t.date);
+                        const firstDayOfWeek = new Date(now);
+                        firstDayOfWeek.setDate(now.getDate() - now.getDay());
+                        firstDayOfWeek.setHours(0,0,0,0);
+                        matchTime = (txDate >= firstDayOfWeek);
+                    } else if (analyticsTimeRange === 'month') {
+                        matchTime = txDateOnly.startsWith(todayStr.slice(0, 7));
+                    } else if (analyticsTimeRange === 'year') {
+                        matchTime = txDateOnly.startsWith(todayStr.slice(0, 4));
+                    } else if (analyticsTimeRange === 'custom') {
+                        if (startInput && txDateOnly < startInput) matchTime = false;
+                        if (endInput && txDateOnly > endInput) matchTime = false;
+                    }
+                }
+                return matchTime;
+            });
+
+            const targetCurrency = baseCurrency; 
+            const targetRate = exchangeRates[targetCurrency] || 1.0;
+
+            let totalIncConverted = 0;
+            let totalExpConverted = 0;
+            let expByCategory = {};
+            let incByCategory = {};
+
+            filtered.forEach(t => {
+                const curr = t.currency || 'CNY';
+                const amt = Number(t.amount) || 0;
+                const isInc = t.type === '收入' || t.type === 'Income';
+
+                const amountInCNY = convertToCNY(amt, curr);
+                const amountInBase = amountInCNY / targetRate;
+
+                if (isInc) {
+                    totalIncConverted += amountInBase;
+                    incByCategory[t.category] = (incByCategory[t.category] || 0) + amountInBase;
+                } else {
+                    totalExpConverted += amountInBase;
+                    expByCategory[t.category] = (expByCategory[t.category] || 0) + amountInBase;
+                }
+            });
+
+            const symbol = targetCurrency === 'CNY' ? '¥' : (targetCurrency === 'EUR' ? '€' : (targetCurrency === 'USD' ? '$' : (targetCurrency === 'GBP' ? '£' : '¥')));
+
+            const targetCategoryData = currentChartMode === 'expense' ? expByCategory : incByCategory;
+
+            // 按金额从大到小降序排列
+            const sortedEntries = Object.entries(targetCategoryData).sort((a, b) => b[1] - a[1]);
+            const sortedCategoryData = {};
+            sortedEntries.forEach(([k, v]) => { sortedCategoryData[k] = v; });
+
+            renderCharts(sortedCategoryData, totalIncConverted, totalExpConverted, symbol);
+            renderAnalyticsCategoryList(sortedCategoryData, symbol);
         }
 
         function convertToCNY(amount, currency) {
@@ -1061,6 +1300,34 @@
 
         function formatCurrency(amount, currency) {
             return `${currency || 'CNY'} ${Number(amount).toFixed(2)}`;
+        }
+
+        function updateGlobalSummary(data) {
+            const targetCurrency = baseCurrency; 
+            const targetRate = exchangeRates[targetCurrency] || 1.0;
+
+            let totalIncConverted = 0;
+            let totalExpConverted = 0;
+
+            data.forEach(t => {
+                const curr = t.currency || 'CNY';
+                const amt = Number(t.amount) || 0;
+                const isInc = t.type === '收入' || t.type === 'Income';
+
+                const amountInCNY = convertToCNY(amt, curr);
+                const amountInBase = amountInCNY / targetRate;
+
+                if (isInc) totalIncConverted += amountInBase;
+                else totalExpConverted += amountInBase;
+            });
+
+            const symbol = targetCurrency === 'CNY' ? '¥' : (targetCurrency === 'EUR' ? '€' : (targetCurrency === 'USD' ? '$' : (targetCurrency === 'GBP' ? '£' : '¥')));
+            
+            document.getElementById('totalIncomeConverted').innerText = `${symbol} ${totalIncConverted.toFixed(2)}`;
+            document.getElementById('totalExpenseConverted').innerText = `${symbol} ${totalExpConverted.toFixed(2)}`;
+            
+            const netConverted = totalIncConverted - totalExpConverted;
+            document.getElementById('netBalanceConverted').innerText = `${symbol} ${netConverted.toFixed(2)}`;
         }
 
         function renderCardList(data) {
@@ -1108,51 +1375,11 @@
             `;}).join('');
         }
 
-        function updateSummaryAndCharts(data) {
-            const targetCurrency = baseCurrency; 
-            const targetRate = exchangeRates[targetCurrency] || 1.0;
-
-            let totalIncConverted = 0;
-            let totalExpConverted = 0;
-            let expByCategory = {};
-            let incByCategory = {};
-
-            data.forEach(t => {
-                const curr = t.currency || 'CNY';
-                const amt = Number(t.amount) || 0;
-                const isInc = t.type === '收入' || t.type === 'Income';
-
-                const amountInCNY = convertToCNY(amt, curr);
-                const amountInBase = amountInCNY / targetRate;
-
-                if (isInc) {
-                    totalIncConverted += amountInBase;
-                    incByCategory[t.category] = (incByCategory[t.category] || 0) + amountInBase;
-                } else {
-                    totalExpConverted += amountInBase;
-                    expByCategory[t.category] = (expByCategory[t.category] || 0) + amountInBase;
-                }
-            });
-
-            const symbol = targetCurrency === 'CNY' ? '¥' : (targetCurrency === 'EUR' ? '€' : (targetCurrency === 'USD' ? '$' : (targetCurrency === 'GBP' ? '£' : '¥')));
-            
-            document.getElementById('totalIncomeConverted').innerText = `${symbol} ${totalIncConverted.toFixed(2)}`;
-            document.getElementById('totalExpenseConverted').innerText = `${symbol} ${totalExpConverted.toFixed(2)}`;
-            
-            const netConverted = totalIncConverted - totalExpConverted;
-            const balanceElem = document.getElementById('netBalanceConverted');
-            balanceElem.innerText = `${symbol} ${netConverted.toFixed(2)}`;
-
-            renderCharts(currentChartMode === 'expense' ? expByCategory : incByCategory, totalIncConverted, totalExpConverted, symbol);
-            renderAnalyticsCategoryList(currentChartMode === 'expense' ? expByCategory : incByCategory, symbol);
-        }
-
-        // 模仿图2下方的精致分类排行卡片列表
         function renderAnalyticsCategoryList(categoryData, symbol) {
             const container = document.getElementById('analyticsCategoryList');
             if (!container) return;
 
-            const sorted = Object.entries(categoryData).sort((a, b) => b[1] - a[1]);
+            const sorted = Object.entries(categoryData);
             const total = sorted.reduce((sum, item) => sum + item[1], 0);
 
             if (sorted.length === 0 || total === 0) {
