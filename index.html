@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>多币种个人记账本</title>
-    <!-- Tailwind CSS v3 CDN -->
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/lib/index.min.js"></script>
-    <script src="https://tailwindcss.com"></script>
+    <title>👽外星人多币种个人记账本</title>
+    <!-- 官方标准 Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- SheetJS (xlsx) for Excel import/export -->
@@ -689,7 +688,6 @@
                 currentUserId = username;
                 sessionToken = result.token; 
                 
-                // 确保无论后端账单加载成败，遮罩层绝对强制隐藏，彻底解决卡死
                 try {
                     await fetchUserDataFromPostgres();
                 } catch (loadErr) {
