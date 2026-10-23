@@ -16,14 +16,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 数据库连接配置（请确保密码和你的 PostgreSQL 密码一致）
+# 自动从环境变量读取（如果在云端部署，直接读取环境变量；如果在本地测试，可以写死测试）
 DB_CONFIG = {
-    "dbname": "finance_db",
-    "user": "postgres",
-    "password": "Zx@62653014", # 记得改成你的真实密码
-    "host": "localhost",
-    "port": "5432"
+    "dbname": os.environ.get("DB_NAME"),
+    "user": os.environ.get("DB_USER"),
+    "password": os.environ.get("DB_PASSWORD"),
+    "host": os.environ.get("DB_HOST"),
+    "port": os.environ.get("DB_PORT", "5432")
 }
+
+# 增加安全检查：如果没配环境变量，直接在启动时报错
+if not all(DB_CONFIG.values()):
+    raise ValueError("数据库环境变量未完整配置！请检查 Render后台的 Environment 设置。")
 
 def get_db_connection():
     return psycopg2.connect(**DB_CONFIG)
@@ -41,7 +45,6 @@ class LedgerData(BaseModel):
     user_id: str
     content: dict
 
-# 后端直接托管网页，访问根路径即可
 @app.get("/", response_class=HTMLResponse)
 def serve_home():
     if os.path.exists("index.html"):
@@ -49,12 +52,10 @@ def serve_home():
             return f.read()
     return "<h3>index.html 文件未找到！</h3>"
 
-# 🌟 新增：防止访问 /api 时报 404
 @app.get("/api")
 def api_root():
-    return {"message": "Finance API is running successfully!"}
+    return {"message": "Finance API is running successfully on cloud!"}
 
-# 注册接口
 @app.post("/api/register")
 def register_user(data: AuthData):
     conn = get_db_connection()
@@ -73,7 +74,6 @@ def register_user(data: AuthData):
         conn.close()
     return {"status": "success"}
 
-# 登录接口
 @app.post("/api/login")
 def login_user(data: AuthData):
     conn = get_db_connection()
@@ -90,7 +90,6 @@ def login_user(data: AuthData):
     
     return {"status": "success", "username": data.username}
 
-# 修改密码接口
 @app.post("/api/change-password")
 def change_password(data: ChangePasswordData):
     conn = get_db_connection()
@@ -110,7 +109,6 @@ def change_password(data: ChangePasswordData):
         conn.close()
     return {"status": "success"}
 
-# 获取账本数据
 @app.get("/api/ledgers/{user_id}")
 def get_ledgers(user_id: str):
     conn = get_db_connection()
@@ -123,7 +121,6 @@ def get_ledgers(user_id: str):
         return {"content": row[0]}
     return {"content": {"默认账本": []}}
 
-# 保存账本数据
 @app.post("/api/ledgers")
 def save_ledgers(data: LedgerData):
     conn = get_db_connection()
@@ -141,4 +138,5 @@ def save_ledgers(data: LedgerData):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
