@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>👽外星人多币种个人记账本</title>
+    <title>多币种个人记账本</title>
     <!-- 官方标准 Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js CDN -->
@@ -72,14 +72,14 @@
         </div>
     </div>
 
-    <!-- 顶栏 -->
+    <!-- 顶栏：沉浸式 FinTech App 风格 -->
     <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40 py-3">
         <div class="max-w-md mx-auto px-4 flex flex-col gap-3">
             <div class="flex items-center justify-between">
                 <div class="flex items-center space-x-2">
                     <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs shadow-md" id="userAvatarText">U</div>
                     <div>
-                        <h1 id="userDisplay" class="text-xs font-bold truncate max-w-[100px]">账户</h1>
+                        <h1 id="userDisplay" class="text-xs font-bold truncate max-w-[120px]">账户</h1>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -94,14 +94,10 @@
                         <option value="ja">🇯🇵 日本語</option>
                         <option value="ko">🇰🇷 한국어</option>
                     </select>
-                    <!-- 退出安全出口 -->
-                    <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 font-bold shadow-sm active:scale-95" title="安全退出">
-                        <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">退出</span>
-                    </button>
                 </div>
             </div>
 
-            <!-- 核心资产卡片 -->
+            <!-- 核心资产大卡片 -->
             <div class="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-3.5 shadow-md text-white relative overflow-hidden">
                 <div class="flex justify-between items-center mb-1.5">
                     <div>
@@ -127,110 +123,177 @@
                     </div>
                 </div>
             </div>
-
-            <!-- 快捷操作栏 -->
-            <div class="grid grid-cols-4 gap-1.5">
-                <button onclick="openModal()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
-                    <i class="fa-solid fa-plus text-emerald-400"></i> <span data-i18n="addTx">记一笔</span>
-                </button>
-                <label class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700 cursor-pointer">
-                    <i class="fa-solid fa-file-excel text-blue-400"></i> <span data-i18n="import">导入</span>
-                    <input type="file" id="importFile" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="promptImportCurrency(event)">
-                </label>
-                <button onclick="exportExcel()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
-                    <i class="fa-solid fa-download text-amber-400"></i> <span data-i18n="export">导出</span>
-                </button>
-                <button onclick="openPasswordModal()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
-                    <i class="fa-solid fa-key text-purple-400"></i> <span data-i18n="changePwd">改密</span>
-                </button>
-            </div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto px-4 py-3 space-y-3">
-        <!-- 时间范围选择条 -->
-        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-2">
-            <div class="flex items-center justify-between">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
-                    <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="range">时间范围</span>
-                </span>
+    <!-- 主体多视图容器 (严格遵循图4的 5 标签独立分栏) -->
+    <main class="max-w-md mx-auto px-4 py-3 space-y-3 pb-20">
+
+        <!-- ================= 视图 1：记账页 (Home) ================= -->
+        <div id="view-home" class="space-y-3">
+            <!-- 时间范围选择条 -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="range">时间范围</span>
+                    </span>
+                </div>
+                <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                    <button onclick="setTimeRange('all')" id="btn-all" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
+                    <button onclick="setTimeRange('today')" id="btn-today" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
+                    <button onclick="setTimeRange('week')" id="btn-week" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
+                    <button onclick="setTimeRange('month')" id="btn-month" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
+                    <button onclick="setTimeRange('year')" id="btn-year" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
+                </div>
             </div>
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
-                <button onclick="setTimeRange('all')" id="btn-all" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
-                <button onclick="setTimeRange('today')" id="btn-today" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
-                <button onclick="setTimeRange('week')" id="btn-week" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
-                <button onclick="setTimeRange('month')" id="btn-month" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
-                <button onclick="setTimeRange('year')" id="btn-year" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
+
+            <!-- 筛选与账单卡片列表区块 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-bold text-slate-700 tracking-wide uppercase" data-i18n="transactionsTitle">账单明细</h3>
+                    <div class="flex items-center gap-2">
+                        <span id="txCount" class="text-[11px] text-slate-400">共 0 笔</span>
+                        <button onclick="batchDeleteTransactions()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> <span data-i18n="batchDelete">批量删除</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
+                        <input type="text" id="searchInput" placeholder="搜索备注/分类..." oninput="filterTransactions()" class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    </div>
+                    <select id="filterType" onchange="filterTransactions()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 focus:outline-none font-medium">
+                        <option value="" data-i18n="allTypes">全部类型</option>
+                        <option value="收入" data-i18n="income">收入</option>
+                        <option value="支出" data-i18n="expense">支出</option>
+                    </select>
+                </div>
+
+                <div id="transactionCardList" class="space-y-2 pt-0.5"></div>
             </div>
         </div>
 
-        <!-- 图表统计区块 -->
-        <div class="grid grid-cols-1 gap-3">
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-2">
-                    <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-                        <i class="fa-solid fa-chart-pie text-indigo-500"></i> <span id="chartTitleText" data-i18n="expCategoryChart">支出分类统计</span>
-                    </h3>
-                    <div class="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-semibold">
-                        <button onclick="switchChartType('expense')" id="btnChartExp" class="px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
-                        <button onclick="switchChartType('income')" id="btnChartInc" class="px-2 py-0.5 rounded-md text-slate-500 transition" data-i18n="income">收入</button>
-                    </div>
+        <!-- ================= 视图 2：报表页 (Analytics - 模仿图2和图3高颜值报表) ================= -->
+        <div id="view-analytics" class="space-y-3 hidden">
+            <!-- 切换支出/收入及主分类/子分类 -->
+            <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 flex justify-between items-center">
+                <div class="flex bg-slate-100 p-0.5 rounded-xl text-xs font-bold">
+                    <button onclick="switchChartType('expense')" id="btnChartExp" class="px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
+                    <button onclick="switchChartType('income')" id="btnChartInc" class="px-3 py-1.5 rounded-lg text-slate-500 transition" data-i18n="income">收入</button>
                 </div>
-                <div class="relative h-40 flex items-center justify-center">
+                <h3 id="chartTitleText" class="text-xs font-bold text-slate-700" data-i18n="expCategoryChart">支出分类构成</h3>
+            </div>
+
+            <!-- 模仿图2的优雅甜甜圈大图 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
+                <div class="relative h-56 flex items-center justify-center">
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
+            <!-- 收支类型对比柱状图 -->
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                 <h3 class="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
                     <i class="fa-solid fa-chart-column text-indigo-500"></i> <span data-i18n="typeComparisonChart">收支类型对比 (折算后)</span>
                 </h3>
-                <div class="relative h-36 flex items-center justify-center">
+                <div class="relative h-40 flex items-center justify-center">
                     <canvas id="typeComparisonChart"></canvas>
                 </div>
             </div>
+
+            <!-- 模仿图2下方的精细分类明细卡片列表 -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
+                <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wider" data-i18n="categoryBreakdownList">分类排行明细</h3>
+                <div id="analyticsCategoryList" class="space-y-2"></div>
+            </div>
         </div>
 
-        <!-- 账单列表区块 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
-            <div class="flex items-center justify-between">
-                <h3 class="text-xs font-bold text-slate-700 tracking-wide uppercase" data-i18n="transactionsTitle">账单明细</h3>
-                <div class="flex items-center gap-2">
-                    <span id="txCount" class="text-[11px] text-slate-400">共 0 笔</span>
-                    <button onclick="batchDeleteTransactions()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition flex items-center gap-1">
-                        <i class="fa-solid fa-trash-can"></i> <span data-i18n="batchDelete">批量删除</span>
-                    </button>
+        <!-- ================= 视图 3：发现页 (Explore) ================= -->
+        <div id="view-explore" class="space-y-3 hidden">
+            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-3">
+                <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <i class="fa-solid fa-earth-americas text-indigo-500"></i> 实时多币种汇率参考 (基准 CNY)
+                </h3>
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇪🇺 欧元 (EUR)</span>
+                        <span class="font-bold text-indigo-600">7.80 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇺🇸 美元 (USD)</span>
+                        <span class="font-bold text-indigo-600">7.20 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇬🇧 英镑 (GBP)</span>
+                        <span class="font-bold text-indigo-600">9.10 CNY</span>
+                    </div>
+                    <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                        <span class="font-semibold text-slate-600">🇯🇵 日元 (JPY)</span>
+                        <span class="font-bold text-indigo-600">0.048 CNY</span>
+                    </div>
                 </div>
             </div>
-
-            <div class="flex gap-2">
-                <div class="relative flex-1">
-                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" placeholder="搜索备注/分类..." oninput="filterTransactions()" class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500">
-                </div>
-                <select id="filterType" onchange="filterTransactions()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 focus:outline-none font-medium">
-                    <option value="" data-i18n="allTypes">全部类型</option>
-                    <option value="收入" data-i18n="income">收入</option>
-                    <option value="支出" data-i18n="expense">支出</option>
-                </select>
-            </div>
-
-            <div id="transactionCardList" class="space-y-2 pt-0.5"></div>
         </div>
+
+        <!-- ================= 视图 4：设置页 (Settings - 严格对标图5) ================= -->
+        <div id="view-settings" class="space-y-2.5">
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden divide-y divide-slate-100">
+                <button onclick="openPasswordModal()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-sm"><i class="fa-solid fa-key"></i></div>
+                        <span class="text-xs font-bold text-slate-700" data-i18n="changePwd">修改登录密码</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
+                <label class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition cursor-pointer text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-sm"><i class="fa-solid fa-file-excel"></i></div>
+                        <span class="text-xs font-bold text-slate-700" data-i18n="import">导入账单数据 (.xlsx)</span>
+                    </div>
+                    <input type="file" id="importFile" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="promptImportCurrency(event)">
+                </label>
+                <button onclick="exportExcel()" class="w-full p-4 flex items-center justify-between hover:bg-slate-50 transition text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center text-sm"><i class="fa-solid fa-download"></i></div>
+                        <span class="text-xs font-bold text-slate-700" data-i18n="export">导出账单报表</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                </button>
+            </div>
+
+            <!-- 极度醒目的安全退出按钮 (严格符合用户需求) -->
+            <div class="pt-2">
+                <button onclick="logout()" class="w-full py-3.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 font-bold rounded-2xl shadow-sm transition flex items-center justify-center gap-2 text-xs">
+                    <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">安全退出当前账号</span>
+                </button>
+            </div>
+        </div>
+
     </main>
 
-    <!-- 底部导航栏 -->
-    <nav class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-200 z-40 py-2 px-6 flex justify-around items-center text-slate-500">
-        <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="flex flex-col items-center gap-1 text-indigo-600">
-            <i class="fa-solid fa-house text-base"></i>
-            <span class="text-[10px] font-semibold" data-i18n="navHome">首页</span>
+    <!-- 底部固定 5 键原生 App 导航栏 (严格对标图4) -->
+    <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 py-2 px-4 flex justify-around items-center text-slate-400">
+        <button onclick="switchTab('home')" id="nav-home" class="flex flex-col items-center gap-1 text-indigo-600 transition">
+            <i class="fa-solid fa-wallet text-base"></i>
+            <span class="text-[10px] font-bold" data-i18n="navHome">记账</span>
         </button>
-        <button onclick="openModal()" class="w-12 h-12 -mt-5 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-300 flex items-center justify-center text-lg hover:bg-indigo-700 transition active:scale-90">
+        <button onclick="switchTab('analytics')" id="nav-analytics" class="flex flex-col items-center gap-1 hover:text-slate-600 transition">
+            <i class="fa-solid fa-chart-pie text-base"></i>
+            <span class="text-[10px] font-medium" data-i18n="navAnalytics">报表</span>
+        </button>
+        <!-- 中间凸出悬浮的“记一笔”大圆钮 -->
+        <button onclick="openModal()" class="w-13 h-13 -mt-6 rounded-full bg-indigo-600 text-white shadow-lg shadow-indigo-300 flex items-center justify-center text-xl hover:bg-indigo-700 transition active:scale-90">
             <i class="fa-solid fa-plus"></i>
         </button>
-        <button onclick="exportExcel()" class="flex flex-col items-center gap-1 hover:text-slate-800">
-            <i class="fa-solid fa-file-excel text-base"></i>
-            <span class="text-[10px] font-medium" data-i18n="navExport">报表</span>
+        <button onclick="switchTab('explore')" id="nav-explore" class="flex flex-col items-center gap-1 hover:text-slate-600 transition">
+            <i class="fa-solid fa-compass text-base"></i>
+            <span class="text-[10px] font-medium" data-i18n="navExplore">发现</span>
+        </button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="flex flex-col items-center gap-1 hover:text-slate-600 transition">
+            <i class="fa-solid fa-gear text-base"></i>
+            <span class="text-[10px] font-medium" data-i18n="navSettings">设置</span>
         </button>
     </nav>
 
@@ -416,7 +479,7 @@
                 appTitle: "多币种个人记账本", addTx: "记一笔", import: "导入", export: "导出",
                 range: "时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", to: "至",
                 baseCurrency: "折算基准:", totalIncome: "总收入", totalExpenseBalance: "总支出",
-                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类统计", incCategoryChart: "收入分类统计",
+                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类构成", incCategoryChart: "收入分类构成",
                 typeComparisonChart: "收支类型对比 (折算后)", allTypes: "全部类型", income: "收入", expense: "支出",
                 allCategories: "全部分类", thDate: "日期", thGroup: "大类", thCategory: "分类", thType: "类型",
                 thNote: "备注/凭证", thAmount: "金额", thAction: "操作", modalTitle: "添加新记账", modalEditTitle: "修改账单",
@@ -425,17 +488,17 @@
                 confirm: "确认导入", save: "保存账单", importModalTitle: "选择导入币种",
                 importModalDesc: "请为本次导入的所有账单指定币种：", loginTab: "登录账号", regTab: "注册新账号",
                 usernameLabel: "用户名 / 账号", pwdLabel: "密码", loginBtn: "立即登录", regBtn: "立即注册",
-                changePwd: "修改密码", logout: "退出", oldPwd: "原密码", newPwd: "新密码", confirmChange: "确认修改",
+                changePwd: "修改登录密码", logout: "安全退出当前账号", oldPwd: "原密码", newPwd: "新密码", confirmChange: "确认修改",
                 batchDelete: "批量删除", newCategoryBtn: "新增大类", newCategoryTitle: "新增自定义大类", newCategoryDesc: "为当前收支类型添加一个新的专属大类：",
                 receiptImage: "账单凭证图片 (小票/发票)", uploadImg: "选择图片",
                 pwdTipText: "密码需不少于8位，包含大小写字母、数字和特殊字符",
-                welcomeBack: "欢迎回来", transactionsTitle: "账单明细", navHome: "首页", navExport: "报表"
+                welcomeBack: "欢迎回来", transactionsTitle: "账单明细", navHome: "记账", navAnalytics: "报表", navExplore: "发现", navSettings: "设置", categoryBreakdownList: "分类排行明细"
             },
             "zh-TW": {
                 appTitle: "多幣種個人記帳本", addTx: "記一筆", import: "匯入", export: "匯出",
                 range: "時間範圍", all: "全部", today: "今日", week: "本週", month: "本月", year: "本年", to: "至",
                 baseCurrency: "基準:", totalIncome: "總收入", totalExpenseBalance: "總支出",
-                balance: "結餘", convertedTotal: "折算總計:", convertedBalance: "折算淨結餘 (實時)", convertedNote: "已按當前基準幣種實時折算", expCategoryChart: "支出分類統計", incCategoryChart: "收入分類統計",
+                balance: "結餘", convertedTotal: "折算總計:", convertedBalance: "折算淨結餘 (實時)", convertedNote: "已按當前基準幣種實時折算", expCategoryChart: "支出分類構成", incCategoryChart: "收入分類構成",
                 typeComparisonChart: "收支類型對比", allTypes: "全部類型", income: "收入", expense: "支出",
                 allCategories: "全部分類", thDate: "日期", thGroup: "大類", thCategory: "分類", thType: "類型",
                 thNote: "備註/憑證", thAmount: "金額", thAction: "操作", modalTitle: "新增記帳", modalEditTitle: "修改帳單",
@@ -444,11 +507,11 @@
                 confirm: "確認匯入", save: "保存帳單", importModalTitle: "選擇匯入幣種",
                 importModalDesc: "請為本次匯入的所有帳單指定幣種：", loginTab: "登入帳號", regTab: "註冊新帳號",
                 usernameLabel: "用戶名 / 帳號", pwdLabel: "密碼", loginBtn: "立即登入", regTab: "立即註冊",
-                changePwd: "修改密碼", logout: "退出", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
+                changePwd: "修改登入密碼", logout: "安全退出當前帳號", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
                 batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個專屬大類：",
                 receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片",
                 pwdTipText: "密碼需不少於8位，包含大小寫字母、數字和特殊字符",
-                welcomeBack: "歡迎回來", transactionsTitle: "帳單明細", navHome: "首頁", navExport: "報表"
+                welcomeBack: "歡迎回來", transactionsTitle: "帳單明細", navHome: "記帳", navAnalytics: "報表", navExplore: "發現", navSettings: "設定", categoryBreakdownList: "分類排行明細"
             },
             en: {
                 appTitle: "Multi-Currency Tracker", addTx: "Add", import: "Import", export: "Export",
@@ -463,129 +526,35 @@
                 confirm: "Confirm", save: "Save", importModalTitle: "Select Currency",
                 importModalDesc: "Specify currency for imported records:", loginTab: "Login", regTab: "Register",
                 usernameLabel: "Username", pwdLabel: "Password", loginBtn: "Login Now", regTab: "Register Now",
-                changePwd: "Password", logout: "Logout", oldPwd: "Old Password", newPwd: "New Password", confirmChange: "Confirm",
+                changePwd: "Change Password", logout: "Logout", oldPwd: "Old Password", newPwd: "New Password", confirmChange: "Confirm",
                 batchDelete: "Batch Delete", newCategoryBtn: "New Group", newCategoryTitle: "Add Custom Group", newCategoryDesc: "Add a new exclusive main category for current type:",
                 receiptImage: "Receipt Image (Invoice/Ticket)", uploadImg: "Choose Image",
                 pwdTipText: "Password must be at least 8 chars with uppercase, lowercase, number & special char",
-                welcomeBack: "Welcome back", transactionsTitle: "Transactions", navHome: "Home", navExport: "Reports"
-            },
-            es: {
-                appTitle: "Gestor Multidivisa", addTx: "Añadir", import: "Importar", export: "Exportar",
-                range: "Rango", all: "Todo", today: "Hoy", week: "Semana", month: "Mes", year: "Año", to: "a",
-                baseCurrency: "Base:", totalIncome: "Ingresos", totalExpenseBalance: "Gastos",
-                balance: "Balance", convertedTotal: "Total:", convertedBalance: "Balance Neto", convertedNote: "Convertido", expCategoryChart: "Gastos por Categoría", incCategoryChart: "Ingresos por Categoría",
-                typeComparisonChart: "Ingresos vs Gastos", allTypes: "Todos", income: "Ingresos", expense: "Gastos",
-                allCategories: "Todas", thDate: "Fecha", thGroup: "Grupo", thCategory: "Categoría", thType: "Tipo",
-                thNote: "Nota/Recibo", thAmount: "Cantidad", thAction: "Acción", modalTitle: "Añadir Registro", modalEditTitle: "Editar",
-                modalDate: "Fecha y Hora", modalType: "Tipo", modalCurrency: "Moneda", modalGroup: "Grupo",
-                modalCategory: "Categoría", modalAmount: "Cantidad", modalNote: "Nota", cancel: "Cancelar",
-                confirm: "Confirmar", save: "Guardar", importModalTitle: "Moneda",
-                importModalDesc: "Especifique la moneda:", loginTab: "Entrar", regTab: "Registro",
-                usernameLabel: "Usuario", pwdLabel: "Contraseña", loginBtn: "Entrar", regTab: "Registrarse",
-                changePwd: "Clave", logout: "Salir", oldPwd: "Antigua", newPwd: "Nueva", confirmChange: "Confirmar",
-                batchDelete: "Eliminar Lote", newCategoryBtn: "Nuevo Grupo", newCategoryTitle: "Añadir Grupo", newCategoryDesc: "Añadir categoría principal:",
-                receiptImage: "Imagen de Recibo", uploadImg: "Elegir Imagen",
-                pwdTipText: "Mínimo 8 caracteres (mayús, minús, número y especial)",
-                welcomeBack: "Bienvenido", transactionsTitle: "Transacciones", navHome: "Inicio", navExport: "Reportes"
-            },
-            it: {
-                appTitle: "Gestore Spese", addTx: "Aggiungi", import: "Importa", export: "Esporta",
-                range: "Intervallo", all: "Tutti", today: "Oggi", week: "Settimana", month: "Mese", year: "Anno", to: "a",
-                baseCurrency: "Base:", totalIncome: "Entrate", totalExpenseBalance: "Spese",
-                balance: "Saldo", convertedTotal: "Totale:", convertedBalance: "Saldo Netto", convertedNote: "Convertito", expCategoryChart: "Spese per Categoria", incCategoryChart: "Entrate per Categoria",
-                typeComparisonChart: "Entrate vs Spese", allTypes: "Tutti", income: "Entrate", expense: "Spese",
-                allCategories: "Tutte", thDate: "Data", thGroup: "Gruppo", thCategory: "Categoria", thType: "Tipo",
-                thNote: "Nota/Ricevuta", thAmount: "Importo", thAction: "Azione", modalTitle: "Nuovo Record", modalEditTitle: "Modifica",
-                modalDate: "Data e Ora", modalType: "Tipo", modalCurrency: "Valuta", modalGroup: "Gruppo",
-                modalCategory: "Categoria", modalAmount: "Importo", modalNote: "Nota", cancel: "Annulla",
-                confirm: "Conferma", save: "Salva", importModalTitle: "Valuta",
-                importModalDesc: "Specifica la valuta:", loginTab: "Accedi", regTab: "Registrati",
-                usernameLabel: "Utente", pwdLabel: "Password", loginBtn: "Accedi", regTab: "Registrati",
-                changePwd: "Password", logout: "Esci", oldPwd: "Vecchia", newPwd: "Nuova", confirmChange: "Conferma",
-                batchDelete: "Elimina Selezionati", newCategoryBtn: "Nuovo Gruppo", newCategoryTitle: "Aggiungi Gruppo", newCategoryDesc: "Aggiungi categoria:",
-                receiptImage: "Immagine Ricevuta", uploadImg: "Scegli Immagine",
-                pwdTipText: "Almeno 8 caratteri conmaiuscole, minuscole, numeri e simboli",
-                welcomeBack: "Bentornato", transactionsTitle: "Transazioni", navHome: "Home", navExport: "Report"
-            },
-            fr: {
-                appTitle: "Gestionnaire", addTx: "Ajouter", import: "Importer", export: "Exporter",
-                range: "Plage", all: "Tout", today: "Aujourd'hui", week: "Semaine", month: "Mois", year: "Année", to: "à",
-                baseCurrency: "Base:", totalIncome: "Revenus", totalExpenseBalance: "Dépenses",
-                balance: "Solde", convertedTotal: "Total:", convertedBalance: "Solde Net", convertedNote: "Converti", expCategoryChart: "Dépenses par Catégorie", incCategoryChart: "Revenus par Catégorie",
-                typeComparisonChart: "Revenus vs Dépenses", allTypes: "Tous", income: "Revenus", expense: "Dépenses",
-                allCategories: "Toutes", thDate: "Date", thGroup: "Groupe", thCategory: "Catégorie", thType: "Type",
-                thNote: "Note/Reçu", thAmount: "Montant", thAction: "Action", modalTitle: "Ajouter", modalEditTitle: "Modifier",
-                modalDate: "Date et Heure", modalType: "Type", modalCurrency: "Devise", modalGroup: "Groupe",
-                modalCategory: "Catégorie", modalAmount: "Montant", modalNote: "Note", cancel: "Annuler",
-                confirm: "Confirmer", save: "Enregistrer", importModalTitle: "Devise",
-                importModalDesc: "Spécifiez la devise :", loginTab: "Connexion", regTab: "Inscription",
-                usernameLabel: "Nom", pwdLabel: "Mot de passe", loginBtn: "Connexion", regTab: "Inscription",
-                changePwd: "Mot de passe", logout: "Sortir", oldPwd: "Ancien", newPwd: "Nouveau", confirmChange: "Confirmer",
-                batchDelete: "Supprimer", newCategoryBtn: "Nouveau Groupe", newCategoryTitle: "Ajouter un Groupe", newCategoryDesc: "Ajouter une catégorie :",
-                receiptImage: "Image du Reçu", uploadImg: "Choisir",
-                pwdTipText: "Minimum 8 caractères (majuscule, minuscule, chiffre et spécial)",
-                welcomeBack: "Bienvenue", transactionsTitle: "Transactions", navHome: "Accueil", navExport: "Rapports"
-            },
-            pt: {
-                appTitle: "Gestor de Despesas", addTx: "Adicionar", import: "Importar", export: "Exportar",
-                range: "Período", all: "Tudo", today: "Hoje", week: "Semana", month: "Mês", year: "Ano", to: "até",
-                baseCurrency: "Base:", totalIncome: "Receita", totalExpenseBalance: "Despesa",
-                balance: "Saldo", convertedTotal: "Total:", convertedBalance: "Saldo Líquido", convertedNote: "Convertido", expCategoryChart: "Despesas por Categoria", incCategoryChart: "Receitas por Categoria",
-                typeComparisonChart: "Receita vs Despesa", allTypes: "Todos", income: "Receita", expense: "Despesa",
-                allCategories: "Todas", thDate: "Data", thGroup: "Grupo", thCategory: "Categoria", thType: "Tipo",
-                thNote: "Nota/Recibo", thAmount: "Valor", thAction: "Ação", modalTitle: "Adicionar", modalEditTitle: "Editar",
-                modalDate: "Data e Hora", modalType: "Tipo", modalCurrency: "Moeda", modalGroup: "Grupo",
-                modalCategory: "Categoria", modalAmount: "Valor", modalNota: "Nota", cancel: "Cancelar",
-                confirm: "Confirmar", save: "Salvar", importModalTitle: "Moeda",
-                importModalDesc: "Especifique a moeda:", loginTab: "Entrar", regTab: "Registrar",
-                usernameLabel: "Usuário", pwdLabel: "Senha", loginBtn: "Entrar", regTab: "Registrar",
-                changePwd: "Senha", logout: "Sair", oldPwd: "Antiga", newPwd: "Nova", confirmChange: "Confirmar",
-                batchDelete: "Excluir Selecionados", newCategoryBtn: "Novo Grupo", newCategoryTitle: "Adicionar Grupo", newCategoryDesc: "Adicionar categoria principal:",
-                receiptImage: "Imagem do Recibo", uploadImg: "Escolher Imagem",
-                pwdTipText: "Mínimo de 8 caracteres (maiúsculas, minúsculas, números e símbolos)",
-                welcomeBack: "Bem-vindo", transactionsTitle: "Transações", navHome: "Início", navExport: "Relatórios"
-            },
-            ja: {
-                appTitle: "お小遣い帳", addTx: "記録する", import: "インポート", export: "エクスポート",
-                range: "期間", all: "すべて", today: "今日", week: "今週", month: "今月", year: "今年", to: "～",
-                baseCurrency: "基準:", totalIncome: "総収入", totalExpenseBalance: "総支出",
-                balance: "残高", convertedTotal: "換算合計:", convertedBalance: "純残高 (リアルタイム)", convertedNote: "リアルタイム換算", expCategoryChart: "支出カテゴリ別", incCategoryChart: "収入カテゴリ別",
-                typeComparisonChart: "収支比較", allTypes: "すべて", income: "収入", expense: "支出",
-                allCategories: "すべてのカテゴリ", thDate: "日付", thGroup: "グループ", thCategory: "カテゴリ", thType: "種別",
-                thNote: "備考/レシート", thAmount: "金額", thAction: "操作", modalTitle: "新規記録", modalEditTitle: "編集",
-                modalDate: "日時", modalType: "種別", modalCurrency: "通貨", modalGroup: "グループ",
-                modalCategory: "カテゴリ", modalAmount: "金額", modalNote: "備考", cancel: "キャンセル",
-                confirm: "確認", save: "保存", importModalTitle: "通貨選択",
-                importModalDesc: "通貨を指定してください：", loginTab: "ログイン", regTab: "登録",
-                usernameLabel: "ユーザー名", pwdLabel: "パスワード", loginBtn: "ログイン", regTab: "登録する",
-                changePwd: "パスワード", logout: "ログアウト", oldPwd: "旧", newPwd: "新", confirmChange: "確認",
-                batchDelete: "一括削除", newCategoryBtn: "グループ追加", newCategoryTitle: "大類の追加", newCategoryDesc: "新しい大類名を入力してください：",
-                receiptImage: "レシート画像", uploadImg: "画像を選択",
-                pwdTipText: "8文字以上で、大文字、小文字、数字、特殊文字を含めてください",
-                welcomeBack: "おかえりなさい", transactionsTitle: "取引明細", navHome: "ホーム", navExport: "レポート"
-            },
-            ko: {
-                appTitle: "다중 통화 가계부", addTx: "기록", import: "가져오기", export: "내보내기",
-                range: "기간", all: "전체", today: "오늘", week: "이번 주", month: "이번 달", year: "올해", to: "~",
-                baseCurrency: "기준:", totalIncome: "총수입", totalExpenseBalance: "총지출",
-                balance: "잔액", convertedTotal: "환산 합계:", convertedBalance: "순잔액 (실시간)", convertedNote: "실시간 환산됨", expCategoryChart: "지출 카테고리별", incCategoryChart: "수입 카테고리별",
-                typeComparisonChart: "수입 및 지출 비교", allTypes: "모든 유형", income: "수입", expense: "지출",
-                allCategories: "모든 카테고리", thDate: "날짜", thGroup: "그룹", thCategory: "카테고리", thType: "유형",
-                thNote: "메모/영수증", thAmount: "금액", thAction: "작업", modalTitle: "새 내역", modalEditTitle: "수정",
-                modalDate: "날짜 및 시간", modalType: "유형", modalCurrency: "통화", modalGroup: "그룹",
-                modalCategory: "카테고리", modalAmount: "금액", modalNote: "메모", cancel: "취소",
-                confirm: "확인", save: "저장", importModalTitle: "통화 선택",
-                importModalDesc: "통화를 지정하세요:", loginTab: "로그인", regTab: "회원가입",
-                usernameLabel: "사용자 이름", pwdLabel: "비밀번호", loginBtn: "로그인", regTab: "가입하기",
-                changePwd: "비밀번호", logout: "로그아웃", oldPwd: "기존", newPwd: "신규", confirmChange: "확인",
-                batchDelete: "선택 삭제", newCategoryBtn: "대분류 추가", newCategoryTitle: "대분류 추가", newCategoryDesc: "새로운 대분류 이름을 입력하세요:",
-                receiptImage: "영수증 이미지", uploadImg: "이미지 선택",
-                pwdTipText: "8자 이상, 대/소문자, 숫자, 특수문자 포함",
-                welcomeBack: "환영합니다", transactionsTitle: "거래 내역", navHome: "홈", navExport: "보고서"
+                welcomeBack: "Welcome back", transactionsTitle: "Transactions", navHome: "Home", navAnalytics: "Analytics", navExplore: "Explore", navSettings: "Settings", categoryBreakdownList: "Category Ranking"
             }
         };
 
         const exchangeRates = { 'CNY': 1.0, 'EUR': 7.8, 'USD': 7.2, 'GBP': 9.1, 'JPY': 0.048 };
+
+        // 底部 5 键视图切换核心函数
+        function switchTab(tabName) {
+            ['home', 'analytics', 'explore', 'settings'].forEach(t => {
+                const view = document.getElementById(`view-${t}`);
+                const navBtn = document.getElementById(`nav-${t}`);
+                if (view) view.classList.add('hidden');
+                if (navBtn) {
+                    navBtn.className = "flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition";
+                }
+            });
+
+            const activeView = document.getElementById(`view-${tabName}`);
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            if (activeView) activeView.classList.remove('hidden');
+            if (activeNav) {
+                activeNav.className = "flex flex-col items-center gap-1 text-indigo-600 font-bold transition";
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
         function togglePasswordVisibility(inputId, iconId) {
             const input = document.getElementById(inputId);
@@ -691,7 +660,7 @@
                 try {
                     await fetchUserDataFromPostgres();
                 } catch (loadErr) {
-                    console.error("加载账单数据出错，已采用默认空账单容错", loadErr);
+                    console.error("加载账单数据出错", loadErr);
                     transactions = [];
                     renderAll();
                 }
@@ -986,12 +955,12 @@
             const dict = translations[currentLang] || translations.zh;
 
             if (mode === 'expense') {
-                btnExp.className = "px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition";
-                btnInc.className = "px-2 py-0.5 rounded-md text-slate-500 transition";
+                btnExp.className = "px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs transition";
+                btnInc.className = "px-3 py-1.5 rounded-lg text-slate-500 transition";
                 title.innerText = dict.expCategoryChart;
             } else {
-                btnInc.className = "px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition";
-                btnExp.className = "px-2 py-0.5 rounded-md text-slate-500 transition";
+                btnInc.className = "px-3 py-1.5 rounded-lg bg-white text-indigo-600 shadow-xs transition";
+                btnExp.className = "px-3 py-1.5 rounded-lg text-slate-500 transition";
                 title.innerText = dict.incCategoryChart;
             }
             filterTransactions();
@@ -1175,6 +1144,42 @@
             balanceElem.innerText = `${symbol} ${netConverted.toFixed(2)}`;
 
             renderCharts(currentChartMode === 'expense' ? expByCategory : incByCategory, totalIncConverted, totalExpConverted, symbol);
+            renderAnalyticsCategoryList(currentChartMode === 'expense' ? expByCategory : incByCategory, symbol);
+        }
+
+        // 模仿图2下方的精致分类排行卡片列表
+        function renderAnalyticsCategoryList(categoryData, symbol) {
+            const container = document.getElementById('analyticsCategoryList');
+            if (!container) return;
+
+            const sorted = Object.entries(categoryData).sort((a, b) => b[1] - a[1]);
+            const total = sorted.reduce((sum, item) => sum + item[1], 0);
+
+            if (sorted.length === 0 || total === 0) {
+                container.innerHTML = `<div class="text-center py-6 text-slate-400 text-xs">暂无分类数据</div>`;
+                return;
+            }
+
+            container.innerHTML = sorted.map(([cat, amt], idx) => {
+                const percent = total > 0 ? ((amt / total) * 100).toFixed(1) : 0;
+                return `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50/80 rounded-xl border border-slate-100">
+                    <div class="flex items-center gap-3">
+                        <span class="w-5 text-xs font-bold text-slate-400">${idx + 1}</span>
+                        <div>
+                            <p class="text-xs font-bold text-slate-800">${cat}</p>
+                            <div class="w-24 bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
+                                <div class="bg-indigo-600 h-full rounded-full" style="width: ${percent}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs font-extrabold text-slate-800">${symbol} ${amt.toFixed(2)}</p>
+                        <span class="text-[10px] text-slate-400">${percent}%</span>
+                    </div>
+                </div>
+                `;
+            }).join('');
         }
 
         function renderCharts(categoryData, totalInc, totalExp, symbol) {
@@ -1191,9 +1196,21 @@
                 type: 'doughnut',
                 data: {
                     labels: categories.length ? categories : ['暂无数据'],
-                    datasets: [{ data: amounts.length ? amounts : [1], backgroundColor: ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6', '#14b8a6', '#f43f5e'] }]
+                    datasets: [{ 
+                        data: amounts.length ? amounts : [1], 
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#6366f1', '#14b8a6', '#f43f5e'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: { size: 9 } } } } }
+                options: { 
+                    responsive: true, 
+                    maintainAspectRatio: false, 
+                    cutout: '65%',
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } 
+                    } 
+                }
             });
 
             const typeCtx = document.getElementById('typeComparisonChart');
