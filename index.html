@@ -44,7 +44,7 @@
 
             <div class="text-center space-y-1">
                 <h2 id="i18nAuthTitle" class="text-xl font-bold text-slate-900">多币种个人记账本</h2>
-                <p id="i18nAuthSub" class="text-xs text-slate-400">PostgreSQL 多用户安全隔离系统</p>
+                <p id="i18nAuthSub" class="text-xs text-slate-400">PostgreSQL 安全隔离与排他登录系统</p>
             </div>
 
             <div class="flex bg-slate-100 p-1 rounded-xl">
@@ -74,18 +74,17 @@
     </div>
 
     <!-- 顶栏 -->
-    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 pb-4">
-        <div class="max-w-md mx-auto px-4 pt-4 flex flex-col gap-4">
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-40 py-3">
+        <div class="max-w-md mx-auto px-4 flex flex-col gap-3">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-2.5">
-                    <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm shadow-md" id="userAvatarText">U</div>
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-xs shadow-md" id="userAvatarText">U</div>
                     <div>
-                        <p class="text-[10px] text-slate-400 uppercase tracking-wider" data-i18n="welcomeBack">欢迎回来</p>
-                        <h1 id="userDisplay" class="text-sm font-bold truncate max-w-[100px]">账户</h1>
+                        <h1 id="userDisplay" class="text-xs font-bold truncate max-w-[100px]">账户</h1>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
-                    <select id="langSelect" onchange="changeLanguage(this.value)" class="text-xs bg-slate-800 text-slate-300 border border-slate-700 rounded-xl px-2.5 py-1.5 focus:outline-none font-medium">
+                    <select id="langSelect" onchange="changeLanguage(this.value)" class="text-[11px] bg-slate-800 text-slate-300 border border-slate-700 rounded-lg px-2 py-1 focus:outline-none">
                         <option value="zh">🇨🇳 简体中文</option>
                         <option value="zh-TW">🇭🇰 繁體中文</option>
                         <option value="en">🇬🇧 English</option>
@@ -96,21 +95,21 @@
                         <option value="ja">🇯🇵 日本語</option>
                         <option value="ko">🇰🇷 한국어</option>
                     </select>
-                    <button onclick="logout()" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 font-medium" title="退出账号">
+                    <!-- 退出安全出口 -->
+                    <button onclick="logout()" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg transition flex items-center gap-1 font-bold shadow-sm active:scale-95" title="安全退出">
                         <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">退出</span>
                     </button>
                 </div>
             </div>
 
-            <!-- 核心资产大卡片 -->
-            <div class="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-5 shadow-xl text-white relative overflow-hidden">
-                <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
-                <div class="flex justify-between items-start mb-3">
+            <!-- 核心资产卡片 -->
+            <div class="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-2xl p-3.5 shadow-md text-white relative overflow-hidden">
+                <div class="flex justify-between items-center mb-1.5">
                     <div>
-                        <p class="text-[11px] text-indigo-200 font-medium uppercase tracking-wider" data-i18n="convertedBalance">折算净结余 (实时)</p>
-                        <h2 id="netBalanceConverted" class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1">¥ 0.00</h2>
+                        <p class="text-[10px] text-indigo-200 uppercase tracking-wider" data-i18n="convertedBalance">折算净结余 (实时)</p>
+                        <h2 id="netBalanceConverted" class="text-xl font-extrabold tracking-tight">¥ 0.00</h2>
                     </div>
-                    <select id="baseCurrency" onchange="updateBaseCurrency()" class="text-xs bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-xl px-2.5 py-1 font-bold focus:outline-none">
+                    <select id="baseCurrency" onchange="updateBaseCurrency()" class="text-xs bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-lg px-2 py-0.5 font-bold focus:outline-none">
                         <option value="CNY" class="text-slate-800">CNY</option>
                         <option value="EUR" class="text-slate-800">EUR</option>
                         <option value="USD" class="text-slate-800">USD</option>
@@ -118,95 +117,83 @@
                         <option value="JPY" class="text-slate-800">JPY</option>
                     </select>
                 </div>
-                <div class="grid grid-cols-2 gap-2 pt-3 border-t border-white/15 text-xs">
+                <div class="grid grid-cols-2 gap-2 pt-2 border-t border-white/15 text-[11px]">
                     <div>
-                        <span class="text-indigo-200 text-[10px]" data-i18n="totalIncome">总收入</span>
-                        <p id="totalIncomeConverted" class="font-bold text-emerald-300">¥ 0.00</p>
+                        <span class="text-indigo-200" data-i18n="totalIncome">总收入:</span>
+                        <span id="totalIncomeConverted" class="font-bold text-emerald-300 ml-1">¥ 0.00</span>
                     </div>
                     <div>
-                        <span class="text-indigo-200 text-[10px]" data-i18n="totalExpenseBalance">总支出</span>
-                        <p id="totalExpenseConverted" class="font-bold text-rose-300">¥ 0.00</p>
+                        <span class="text-indigo-200" data-i18n="totalExpenseBalance">总支出:</span>
+                        <span id="totalExpenseConverted" class="font-bold text-rose-300 ml-1">¥ 0.00</span>
                     </div>
                 </div>
             </div>
 
-            <!-- 快捷操作按钮组 -->
-            <div class="grid grid-cols-4 gap-2 pt-1">
-                <button onclick="openModal()" class="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 transition active:scale-95 border border-slate-700/60 shadow-sm">
-                    <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-sm">
-                        <i class="fa-solid fa-plus"></i>
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-300" data-i18n="addTx">记一笔</span>
+            <!-- 快捷操作栏 -->
+            <div class="grid grid-cols-4 gap-1.5">
+                <button onclick="openModal()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
+                    <i class="fa-solid fa-plus text-emerald-400"></i> <span data-i18n="addTx">记一笔</span>
                 </button>
-                <label class="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 transition active:scale-95 border border-slate-700/60 shadow-sm cursor-pointer">
-                    <div class="w-10 h-10 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center mb-1 text-sm">
-                        <i class="fa-solid fa-file-excel"></i>
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-300" data-i18n="import">导入</span>
+                <label class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700 cursor-pointer">
+                    <i class="fa-solid fa-file-excel text-blue-400"></i> <span data-i18n="import">导入</span>
                     <input type="file" id="importFile" accept=".xlsx, .xls, .csv, .json" class="hidden" onchange="promptImportCurrency(event)">
                 </label>
-                <button onclick="exportExcel()" class="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 transition active:scale-95 border border-slate-700/60 shadow-sm">
-                    <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center mb-1 text-sm">
-                        <i class="fa-solid fa-download"></i>
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-300" data-i18n="export">导出</span>
+                <button onclick="exportExcel()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
+                    <i class="fa-solid fa-download text-amber-400"></i> <span data-i18n="export">导出</span>
                 </button>
-                <button onclick="openPasswordModal()" class="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 transition active:scale-95 border border-slate-700/60 shadow-sm">
-                    <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center mb-1 text-sm">
-                        <i class="fa-solid fa-key"></i>
-                    </div>
-                    <span class="text-[11px] font-medium text-slate-300" data-i18n="changePwd">改密</span>
+                <button onclick="openPasswordModal()" class="flex items-center justify-center gap-1 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 border border-slate-700">
+                    <i class="fa-solid fa-key text-purple-400"></i> <span data-i18n="changePwd">改密</span>
                 </button>
             </div>
         </div>
     </header>
 
-    <main class="max-w-md mx-auto px-4 py-4 space-y-4">
+    <main class="max-w-md mx-auto px-4 py-3 space-y-3">
         <!-- 时间范围选择条 -->
-        <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100 space-y-2.5">
+        <div class="bg-white p-3 rounded-2xl shadow-sm border border-slate-100 space-y-2">
             <div class="flex items-center justify-between">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="range">时间范围</span>
                 </span>
             </div>
-            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
-                <button onclick="setTimeRange('all')" id="btn-all" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
-                <button onclick="setTimeRange('today')" id="btn-today" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
-                <button onclick="setTimeRange('week')" id="btn-week" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
-                <button onclick="setTimeRange('month')" id="btn-month" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
-                <button onclick="setTimeRange('year')" id="btn-year" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
+            <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5">
+                <button onclick="setTimeRange('all')" id="btn-all" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
+                <button onclick="setTimeRange('today')" id="btn-today" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="today">今日</button>
+                <button onclick="setTimeRange('week')" id="btn-week" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="week">本周</button>
+                <button onclick="setTimeRange('month')" id="btn-month" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="month">本月</button>
+                <button onclick="setTimeRange('year')" id="btn-year" class="px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0" data-i18n="year">本年</button>
             </div>
         </div>
 
         <!-- 图表统计区块 -->
-        <div class="grid grid-cols-1 gap-4">
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <div class="flex justify-between items-center mb-3">
+        <div class="grid grid-cols-1 gap-3">
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
+                <div class="flex justify-between items-center mb-2">
                     <h3 class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
                         <i class="fa-solid fa-chart-pie text-indigo-500"></i> <span id="chartTitleText" data-i18n="expCategoryChart">支出分类统计</span>
                     </h3>
                     <div class="flex bg-slate-100 p-0.5 rounded-lg text-[10px] font-semibold">
-                        <button onclick="switchChartType('expense')" id="btnChartExp" class="px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
-                        <button onclick="switchChartType('income')" id="btnChartInc" class="px-2 py-1 rounded-md text-slate-500 transition" data-i18n="income">收入</button>
+                        <button onclick="switchChartType('expense')" id="btnChartExp" class="px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition" data-i18n="expense">支出</button>
+                        <button onclick="switchChartType('income')" id="btnChartInc" class="px-2 py-0.5 rounded-md text-slate-500 transition" data-i18n="income">收入</button>
                     </div>
                 </div>
-                <div class="relative h-48 flex items-center justify-center">
+                <div class="relative h-40 flex items-center justify-center">
                     <canvas id="categoryChart"></canvas>
                 </div>
             </div>
 
-            <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
-                <h3 class="text-xs font-bold text-slate-700 mb-3 flex items-center gap-1.5">
+            <div class="bg-white p-3.5 rounded-2xl shadow-sm border border-slate-100">
+                <h3 class="text-xs font-bold text-slate-700 mb-2 flex items-center gap-1.5">
                     <i class="fa-solid fa-chart-column text-indigo-500"></i> <span data-i18n="typeComparisonChart">收支类型对比 (折算后)</span>
                 </h3>
-                <div class="relative h-44 flex items-center justify-center">
+                <div class="relative h-36 flex items-center justify-center">
                     <canvas id="typeComparisonChart"></canvas>
                 </div>
             </div>
         </div>
 
-        <!-- 筛选与账单卡片列表区块 -->
-        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-3">
+        <!-- 账单列表区块 -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-3.5 space-y-2.5">
             <div class="flex items-center justify-between">
                 <h3 class="text-xs font-bold text-slate-700 tracking-wide uppercase" data-i18n="transactionsTitle">账单明细</h3>
                 <div class="flex items-center gap-2">
@@ -220,20 +207,20 @@
             <div class="flex gap-2">
                 <div class="relative flex-1">
                     <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-search text-xs"></i></span>
-                    <input type="text" id="searchInput" placeholder="搜索备注/分类..." oninput="filterTransactions()" class="w-full pl-8 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                    <input type="text" id="searchInput" placeholder="搜索备注/分类..." oninput="filterTransactions()" class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-indigo-500">
                 </div>
-                <select id="filterType" onchange="filterTransactions()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-2 focus:outline-none font-medium">
+                <select id="filterType" onchange="filterTransactions()" class="text-xs bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 focus:outline-none font-medium">
                     <option value="" data-i18n="allTypes">全部类型</option>
                     <option value="收入" data-i18n="income">收入</option>
                     <option value="支出" data-i18n="expense">支出</option>
                 </select>
             </div>
 
-            <div id="transactionCardList" class="space-y-2.5 pt-1"></div>
+            <div id="transactionCardList" class="space-y-2 pt-0.5"></div>
         </div>
     </main>
 
-    <!-- 底部固定导航栏 -->
+    <!-- 底部导航栏 -->
     <nav class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-200 z-40 py-2 px-6 flex justify-around items-center text-slate-500">
         <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="flex flex-col items-center gap-1 text-indigo-600">
             <i class="fa-solid fa-house text-base"></i>
@@ -402,6 +389,7 @@
         const API_BASE = "https://my-expense-tracker-jfzg.onrender.com/api"; 
 
         let currentUserId = "";
+        let sessionToken = "";
         let transactions = [];
         let userCustomCategories = {
             "支出": ["餐饮", "旅游", "交通", "住房", "娱乐"],
@@ -429,7 +417,7 @@
                 appTitle: "多币种个人记账本", addTx: "记一笔", import: "导入", export: "导出",
                 range: "时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", to: "至",
                 baseCurrency: "折算基准:", totalIncome: "总收入", totalExpenseBalance: "总支出",
-                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币種实时折算", expCategoryChart: "支出分类统计", incCategoryChart: "收入分类统计",
+                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类统计", incCategoryChart: "收入分类统计",
                 typeComparisonChart: "收支类型对比 (折算后)", allTypes: "全部类型", income: "收入", expense: "支出",
                 allCategories: "全部分类", thDate: "日期", thGroup: "大类", thCategory: "分类", thType: "类型",
                 thNote: "备注/凭证", thAmount: "金额", thAction: "操作", modalTitle: "添加新记账", modalEditTitle: "修改账单",
@@ -699,6 +687,7 @@
                 }
 
                 currentUserId = username;
+                sessionToken = result.token; // 保存单设备排他 Token
                 await fetchUserDataFromPostgres();
                 
                 const userDisp = document.getElementById('userDisplay');
@@ -720,7 +709,14 @@
 
         async function fetchUserDataFromPostgres() {
             try {
-                const res = await fetch(`${API_BASE}/ledgers/${currentUserId}`);
+                const res = await fetch(`${API_BASE}/ledgers/${currentUserId}`, {
+                    headers: { "x-token": sessionToken }
+                });
+                if (res.status === 401) {
+                    alert("您的账号已在其他设备登录，当前会话已失效！");
+                    logout();
+                    return;
+                }
                 const data = await res.json();
                 if (data && data.content) {
                     if (Array.isArray(data.content)) {
@@ -746,9 +742,12 @@
         async function saveToPostgres() {
             if (!currentUserId) return;
             try {
-                await fetch(`${API_BASE}/ledgers`, {
+                const res = await fetch(`${API_BASE}/ledgers`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-token": sessionToken
+                    },
                     body: JSON.stringify({ 
                         user_id: currentUserId, 
                         content: { 
@@ -757,6 +756,10 @@
                         } 
                     })
                 });
+                if (res.status === 401) {
+                    alert("您的账号已在其他设备登录，当前会话已失效！");
+                    logout();
+                }
             } catch (err) {
                 console.error("同步到数据库失败", err);
             }
@@ -764,6 +767,7 @@
 
         function logout() {
             currentUserId = "";
+            sessionToken = "";
             transactions = [];
             const un = document.getElementById('authUsername');
             const pw = document.getElementById('authPassword');
@@ -795,9 +799,17 @@
             try {
                 const res = await fetch(`${API_BASE}/change-password`, {
                     method: "POST",
-                    headers: { "Content-Type": "application/json" },
+                    headers: { 
+                        "Content-Type": "application/json",
+                        "x-token": sessionToken
+                    },
                     body: JSON.stringify({ username: currentUserId, old_password, new_password })
                 });
+                if (res.status === 401) {
+                    alert("您的账号已在其他设备登录，当前会话已失效！");
+                    logout();
+                    return;
+                }
                 const result = await res.json();
                 if (!res.ok) throw new Error(result.detail || "修改密码失败");
                 
@@ -953,7 +965,7 @@
             ['all', 'today', 'week', 'month', 'year'].forEach(r => {
                 const btn = document.getElementById(`btn-${r}`);
                 if (btn) {
-                    btn.className = r === range ? "px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" : "px-3 py-1.5 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0";
+                    btn.className = r === range ? "px-2.5 py-1 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" : "px-2.5 py-1 text-xs font-medium rounded-xl bg-slate-100 text-slate-600 hover:bg-slate-200 transition shrink-0";
                 }
             });
             filterTransactions();
@@ -967,12 +979,12 @@
             const dict = translations[currentLang] || translations.zh;
 
             if (mode === 'expense') {
-                btnExp.className = "px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition";
-                btnInc.className = "px-2 py-1 rounded-md text-slate-500 transition";
+                btnExp.className = "px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition";
+                btnInc.className = "px-2 py-0.5 rounded-md text-slate-500 transition";
                 title.innerText = dict.expCategoryChart;
             } else {
-                btnInc.className = "px-2 py-1 rounded-md bg-white text-indigo-600 shadow-xs transition";
-                btnExp.className = "px-2 py-1 rounded-md text-slate-500 transition";
+                btnInc.className = "px-2 py-0.5 rounded-md bg-white text-indigo-600 shadow-xs transition";
+                btnExp.className = "px-2 py-0.5 rounded-md text-slate-500 transition";
                 title.innerText = dict.incCategoryChart;
             }
             filterTransactions();
@@ -1091,29 +1103,29 @@
                 const isInc = t.type === '收入' || t.type === 'Income';
                 const hasImg = t.image && t.image.length > 0;
                 return `
-                <div class="bg-slate-50/80 hover:bg-slate-100/80 border border-slate-100 p-3 rounded-2xl flex items-center justify-between gap-3 transition shadow-xs">
-                    <div class="flex items-center gap-3">
+                <div class="bg-slate-50/80 hover:bg-slate-100/80 border border-slate-100 p-2.5 rounded-2xl flex items-center justify-between gap-3 transition shadow-xs">
+                    <div class="flex items-center gap-2.5">
                         <input type="checkbox" class="row-checkbox rounded text-indigo-600 focus:ring-indigo-500 w-4 h-4" data-id="${t.id}">
-                        <div class="w-10 h-10 rounded-xl ${isInc ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} flex items-center justify-center font-bold text-sm shrink-0">
+                        <div class="w-9 h-9 rounded-xl ${isInc ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'} flex items-center justify-center font-bold text-xs shrink-0">
                             <i class="fa-solid ${isInc ? 'fa-arrow-down' : 'fa-arrow-up'}"></i>
                         </div>
                         <div>
                             <div class="flex items-center gap-1.5">
-                                <span class="font-bold text-slate-800 text-sm">${t.category}</span>
+                                <span class="font-bold text-slate-800 text-xs">${t.category}</span>
                                 <span class="text-[10px] bg-slate-200/80 text-slate-600 px-1.5 py-0.5 rounded">${t.group || '其他'}</span>
                             </div>
-                            <p class="text-[11px] text-slate-400 mt-0.5">${t.date}</p>
-                            ${t.note ? `<p class="text-[11px] text-slate-500 mt-0.5 italic">${t.note}</p>` : ''}
+                            <p class="text-[10px] text-slate-400 mt-0.5">${t.date}</p>
+                            ${t.note ? `<p class="text-[10px] text-slate-500 mt-0.5 italic">${t.note}</p>` : ''}
                         </div>
                     </div>
-                    <div class="flex flex-col items-end gap-1.5">
-                        <span class="font-extrabold text-sm ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="font-extrabold text-xs ${isInc ? 'text-emerald-600' : 'text-slate-800'}">
                             ${isInc ? '+' : '-'}${formatCurrency(t.amount, t.currency)}
                         </span>
-                        <div class="flex items-center gap-2">
-                            ${hasImg ? `<img src="${t.image}" class="w-6 h-6 object-cover rounded-md border border-slate-200 cursor-pointer shadow-xs" onclick="previewFullImage('${t.image}')" title="凭证">` : ''}
-                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600 p-1" title="编辑"><i class="fa-solid fa-pen text-xs"></i></button>
-                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-500 p-1" title="删除"><i class="fa-solid fa-trash text-xs"></i></button>
+                        <div class="flex items-center gap-1.5">
+                            ${hasImg ? `<img src="${t.image}" class="w-5 h-5 object-cover rounded-md border border-slate-200 cursor-pointer shadow-xs" onclick="previewFullImage('${t.image}')" title="凭证">` : ''}
+                            <button onclick="editTransaction('${t.id}')" class="text-slate-400 hover:text-indigo-600 p-1" title="编辑"><i class="fa-solid fa-pen text-[11px]"></i></button>
+                            <button onclick="deleteTransaction('${t.id}')" class="text-slate-400 hover:text-rose-500 p-1" title="删除"><i class="fa-solid fa-trash text-[11px]"></i></button>
                         </div>
                     </div>
                 </div>
@@ -1159,7 +1171,6 @@
         }
 
         function renderCharts(categoryData, totalInc, totalExp, symbol) {
-            // 安全防御：如果 Chart.js 尚未加载完成，直接安全返回避免报错
             if (typeof Chart === 'undefined') return;
 
             const catCtx = document.getElementById('categoryChart');
@@ -1175,7 +1186,7 @@
                     labels: categories.length ? categories : ['暂无数据'],
                     datasets: [{ data: amounts.length ? amounts : [1], backgroundColor: ['#6366f1', '#ec4899', '#8b5cf6', '#10b981', '#f59e0b', '#3b82f6', '#14b8a6', '#f43f5e'] }]
                 },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 8, font: { size: 9 } } } } }
             });
 
             const typeCtx = document.getElementById('typeComparisonChart');

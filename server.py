@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 import psycopg2
 import json
 import os
+import uuid
 import traceback
 
 app = FastAPI()
@@ -34,6 +35,31 @@ def get_db_connection():
         traceback.print_exc()
         raise e
 
+# 初始化数据库表结构（确保 users 表有 active_token 字段）
+def init_db():
+    try:
+        conn = get_db_connection()
+        cur = conn.cursor()
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS users (
+                email VARCHAR(255) PRIMARY KEY,
+                password_hash VARCHAR(255) NOT NULL,
+                active_token VARCHAR(255)
+            );
+            CREATE TABLE IF NOT EXISTS user_ledgers (
+                user_id VARCHAR(255) PRIMARY KEY,
+                content JSONB,
+                updated_at TIMESTAMP DEFAULT NOW()
+            );
+        """)
+        conn.commit()
+        cur.close()
+        conn.close()
+    except Exception as e:
+        print("初始化数据库表失败:", e)
+
+init_db()
+
 class AuthData(BaseModel):
     username: str
     password: str
@@ -47,16 +73,24 @@ class LedgerData(BaseModel):
     user_id: str
     content: dict
 
+def verify_token(user_id: str, token: str):
+    if not token:
+        raise HTTPException(status_code=401, detail="未授权，请重新登录")
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT active_token FROM users WHERE email = %s", (user_id,))
+    row = cur.fetchone()
+    cur.close()
+    conn.close()
+    if not row or row[0] != token:
+        raise HTTPException(status_code=401, detail="您的账号已在其他设备登录，当前会话已失效")
+
 @app.get("/", response_class=HTMLResponse)
 def serve_home():
     if os.path.exists("index.html"):
         with open("index.html", "r", encoding="utf-8") as f:
             return f.read()
     return "<h3>index.html 文件未找到！</h3>"
-
-@app.get("/api")
-def api_root():
-    return {"message": "Finance API is running successfully on cloud!"}
 
 @app.post("/api/register")
 def register_user(data: AuthData):
@@ -72,9 +106,7 @@ def register_user(data: AuthData):
         conn.close()
         return {"status": "success"}
     except Exception as e:
-        print("=== 注册接口报错 ===")
-        traceback.print_exc()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail="注册失败或用户名已存在")
 
 @app.post("/api/login")
 def login_user(data: AuthData):
@@ -83,32 +115,40 @@ def login_user(data: AuthData):
         cur = conn.cursor()
         cur.execute("SELECT password_hash FROM users WHERE email = %s", (data.username,))
         row = cur.fetchone()
+        
+        if not row:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="用户不存在，请先注册")
+        if row[0] != data.password:
+            cur.close()
+            conn.close()
+            raise HTTPException(status_code=400, detail="密码错误")
+        
+        # 生成唯一的会话 Token，实现单设备排他登录
+        session_token = str(uuid.uuid4())
+        cur.execute("UPDATE users SET active_token = %s WHERE email = %s", (session_token, data.username))
+        conn.commit()
         cur.close()
         conn.close()
         
-        if not row:
-            raise HTTPException(status_code=400, detail="用户不存在，请先注册")
-        if row[0] != data.password:
-            raise HTTPException(status_code=400, detail="密码错误")
-        
-        return {"status": "success", "username": data.username}
+        return {"status": "success", "username": data.username, "token": session_token}
     except HTTPException as he:
         raise he
     except Exception as e:
-        print("=== 登录接口报错 ===")
-        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/change-password")
-def change_password(data: ChangePasswordData):
+def change_password(data: ChangePasswordData, x_token: str = Header(None)):
+    verify_token(data.username, x_token)
     try:
         conn = get_db_connection()
         cur = conn.cursor()
         cur.execute("SELECT password_hash FROM users WHERE email = %s", (data.username,))
         row = cur.fetchone()
-        if not row:
-            raise HTTPException(status_code=400, detail="用户不存在")
-        if row[0] != data.old_password:
+        if not row or row[0] != data.old_password:
+            cur.close()
+            conn.close()
             raise HTTPException(status_code=400, detail="原密码不正确")
         
         cur.execute("UPDATE users SET password_hash = %s WHERE email = %s", (data.new_password, data.username))
@@ -119,12 +159,11 @@ def change_password(data: ChangePasswordData):
     except HTTPException as he:
         raise he
     except Exception as e:
-        print("=== 修改密码报错 ===")
-        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.get("/api/ledgers/{user_id}")
-def get_ledgers(user_id: str):
+def get_ledgers(user_id: str, x_token: str = Header(None)):
+    verify_token(user_id, x_token)
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -135,13 +174,14 @@ def get_ledgers(user_id: str):
         if row:
             return {"content": row[0]}
         return {"content": {"默认账本": []}}
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        print("=== 获取账单报错 ===")
-        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/api/ledgers")
-def save_ledgers(data: LedgerData):
+def save_ledgers(data: LedgerData, x_token: str = Header(None)):
+    verify_token(data.user_id, x_token)
     try:
         conn = get_db_connection()
         cur = conn.cursor()
@@ -155,9 +195,9 @@ def save_ledgers(data: LedgerData):
         cur.close()
         conn.close()
         return {"status": "success"}
+    except HTTPException as he:
+        raise he
     except Exception as e:
-        print("=== 保存账单报错 ===")
-        traceback.print_exc()
         raise HTTPException(status_code=400, detail=str(e))
 
 if __name__ == "__main__":
