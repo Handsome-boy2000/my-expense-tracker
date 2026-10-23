@@ -59,7 +59,14 @@
                 </div>
                 <div>
                     <label class="block text-xs font-semibold text-slate-500 mb-1" data-i18n="pwdLabel">密码</label>
-                    <input type="password" id="authPassword" required placeholder="请输入密码..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="relative">
+                        <input type="password" id="authPassword" required placeholder="请输入密码..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="button" onclick="togglePasswordVisibility('authPassword', 'authPwdIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i id="authPwdIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <!-- 密码强度提示 -->
+                    <p id="pwdTip" class="text-[11px] text-slate-400 mt-1 hidden" data-i18n="pwdTipText">密码需不少于8位，包含大小写字母、数字和特殊字符</p>
                 </div>
                 <div id="authErrorMsg" class="text-xs text-rose-500 hidden font-medium text-center"></div>
                 <button type="submit" id="authSubmitBtn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-indigo-200 text-sm" data-i18n="loginBtn">立即登录</button>
@@ -128,11 +135,11 @@
                 <div class="flex items-center gap-1.5">
                     <label class="text-xs font-medium text-slate-400" data-i18n="baseCurrency">折算基准:</label>
                     <select id="baseCurrency" onchange="updateBaseCurrency()" class="text-xs bg-slate-50 border border-slate-200 rounded-lg px-2 py-1 font-bold text-indigo-600 focus:outline-none">
-                        <option value="CNY">CNY (人民币)</option>
-                        <option value="EUR">EUR (欧元)</option>
-                        <option value="USD">USD (美元)</option>
-                        <option value="GBP">GBP (英镑)</option>
-                        <option value="JPY">JPY (日元)</option>
+                        <option value="CNY">CNY</option>
+                        <option value="EUR">EUR</option>
+                        <option value="USD">USD</option>
+                        <option value="GBP">GBP</option>
+                        <option value="JPY">JPY</option>
                     </select>
                 </div>
             </div>
@@ -158,13 +165,10 @@
 
         <!-- 汇总数据卡片 -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <!-- 收入卡片 -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between space-y-3">
                 <div>
                     <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2" data-i18n="totalIncome">筛选期总收入 (各币种明细)</p>
-                    <div id="incomeBreakdown" class="space-y-1 text-sm font-bold text-emerald-600">
-                        <!-- 动态填入各币种收入 -->
-                    </div>
+                    <div id="incomeBreakdown" class="space-y-1 text-sm font-bold text-emerald-600"></div>
                 </div>
                 <div class="pt-3 border-t border-slate-100 flex items-baseline justify-between">
                     <span class="text-xs text-slate-400" data-i18n="convertedTotal">折算总计:</span>
@@ -172,13 +176,10 @@
                 </div>
             </div>
 
-            <!-- 支出与结余卡片 -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between space-y-3">
                 <div>
                     <p class="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-2" data-i18n="totalExpenseBalance">筛选期总支出 (各币种明细)</p>
-                    <div id="expenseBreakdown" class="space-y-1 text-sm font-bold text-rose-600">
-                        <!-- 动态填入各币种支出 -->
-                    </div>
+                    <div id="expenseBreakdown" class="space-y-1 text-sm font-bold text-rose-600"></div>
                 </div>
                 <div class="pt-3 border-t border-slate-100 flex items-baseline justify-between">
                     <span class="text-xs text-slate-400"><span data-i18n="convertedBalance">折算结余</span>:</span>
@@ -253,9 +254,7 @@
                             <th class="py-3 px-3 font-semibold text-center" data-i18n="thAction">操作</th>
                         </tr>
                     </thead>
-                    <tbody id="transactionTable" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                        <!-- 动态填充 -->
-                    </tbody>
+                    <tbody id="transactionTable" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                 </table>
             </div>
         </div>
@@ -268,18 +267,29 @@
         </div>
     </div>
 
-    <!-- 修改密码弹窗 -->
+    <!-- 修改密码弹窗 (带小眼睛和规则提示) -->
     <div id="passwordModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl space-y-4">
             <h3 class="font-bold text-slate-800 text-base" data-i18n="changePwd">修改密码</h3>
             <form onsubmit="changePassword(event)" class="space-y-3">
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="oldPwd">原密码</label>
-                    <input type="password" id="oldPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="relative">
+                        <input type="password" id="oldPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="button" onclick="togglePasswordVisibility('oldPassword', 'oldPwdIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i id="oldPwdIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
                 </div>
                 <div>
                     <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="newPwd">新密码</label>
-                    <input type="password" id="newPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <div class="relative">
+                        <input type="password" id="newPassword" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 pr-10 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <button type="button" onclick="togglePasswordVisibility('newPassword', 'newPwdIcon')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                            <i id="newPwdIcon" class="fa-solid fa-eye text-xs"></i>
+                        </button>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1" data-i18n="pwdTipText">密码需不少于8位，包含大小写字母、数字和特殊字符</p>
                 </div>
                 <div class="pt-2 flex justify-end gap-2">
                     <button type="button" onclick="closePasswordModal()" class="px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
@@ -348,8 +358,7 @@
                             <label class="text-xs font-medium text-slate-500" data-i18n="modalGroup">大类</label>
                             <button type="button" onclick="openNewCategoryModal()" class="text-[10px] text-indigo-600 hover:text-indigo-700 font-semibold flex items-center gap-0.5"><i class="fa-solid fa-plus"></i> <span data-i18n="newCategoryBtn">新增大类</span></button>
                         </div>
-                        <select id="txGroup" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                        </select>
+                        <select id="txGroup" required class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-500 mb-1" data-i18n="modalCategory">子类</label>
@@ -392,7 +401,7 @@
     <div id="newCategoryModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center z-50 p-4">
         <div class="bg-white rounded-3xl max-w-xs w-full p-6 shadow-2xl space-y-4">
             <h3 class="font-bold text-slate-800 text-base" data-i18n="newCategoryTitle">新增自定义大类</h3>
-            <p class="text-xs text-slate-400" data-i18n="newCategoryDesc">为当前收支类型添加一个新的专属大类：</p>
+            <p class="text-xs text-slate-400" data-i18n="newCategoryDesc">為當前收支類型添加一個新的專屬大類：</p>
             <input type="text" id="newCategoryNameInput" placeholder="请输入大类名称..." class="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 focus:outline-none focus:ring-2 focus:ring-indigo-500">
             <div class="pt-2 flex justify-end gap-2">
                 <button type="button" onclick="closeNewCategoryModal()" class="px-3.5 py-2 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-xl transition" data-i18n="cancel">取消</button>
@@ -402,7 +411,7 @@
     </div>
 
     <script>
-        const API_BASE = "https://my-expense-tracker-jfzg.onrender.com/api";
+        const API_BASE = "https://my-expense-tracker-jfzg.onrender.com/api"; 
 
         let currentUserId = "";
         let transactions = [];
@@ -442,7 +451,8 @@
                 usernameLabel: "用户名 / 账号", pwdLabel: "密码", loginBtn: "立即登录", regBtn: "立即注册",
                 changePwd: "修改密码", logout: "退出", oldPwd: "原密码", newPwd: "新密码", confirmChange: "确认修改",
                 batchDelete: "批量删除", newCategoryBtn: "新增大类", newCategoryTitle: "新增自定义大类", newCategoryDesc: "为当前收支类型添加一个新的专属大类：",
-                receiptImage: "账单凭证图片 (小票/发票)", uploadImg: "选择图片"
+                receiptImage: "账单凭证图片 (小票/发票)", uploadImg: "选择图片",
+                pwdTipText: "密码需不少于8位，包含大小写字母、数字和特殊字符"
             },
             "zh-TW": {
                 appTitle: "多幣種個人記帳本", addTx: "記一筆", import: "匯入", export: "匯出",
@@ -459,7 +469,8 @@
                 usernameLabel: "用戶名 / 帳號", pwdLabel: "密碼", loginBtn: "立即登入", regBtn: "立即註冊",
                 changePwd: "修改密碼", logout: "退出", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
                 batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個新的專屬大類：",
-                receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片"
+                receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片",
+                pwdTipText: "密碼需不少於8位，包含大小寫字母、數字和特殊字符"
             },
             en: {
                 appTitle: "Multi-Currency Tracker", addTx: "Add", import: "Import", export: "Export",
@@ -476,7 +487,8 @@
                 usernameLabel: "Username", pwdLabel: "Password", loginBtn: "Login Now", regBtn: "Register Now",
                 changePwd: "Password", logout: "Logout", oldPwd: "Old Password", newPwd: "New Password", confirmChange: "Confirm",
                 batchDelete: "Batch Delete", newCategoryBtn: "New Group", newCategoryTitle: "Add Custom Group", newCategoryDesc: "Add a new exclusive main category for current type:",
-                receiptImage: "Receipt Image (Invoice/Ticket)", uploadImg: "Choose Image"
+                receiptImage: "Receipt Image (Invoice/Ticket)", uploadImg: "Choose Image",
+                pwdTipText: "Password must be at least 8 chars with uppercase, lowercase, number & special char"
             },
             es: {
                 appTitle: "Gestor Multidivisa", addTx: "Añadir", import: "Importar", export: "Exportar",
@@ -493,7 +505,8 @@
                 usernameLabel: "Usuario", pwdLabel: "Contraseña", loginBtn: "Entrar", regTab: "Registrarse",
                 changePwd: "Clave", logout: "Salir", oldPwd: "Antigua", newPwd: "Nueva", confirmChange: "Confirmar",
                 batchDelete: "Eliminar Lote", newCategoryBtn: "Nuevo Grupo", newCategoryTitle: "Añadir Grupo", newCategoryDesc: "Añadir categoría principal:",
-                receiptImage: "Imagen de Recibo", uploadImg: "Elegir Imagen"
+                receiptImage: "Imagen de Recibo", uploadImg: "Elegir Imagen",
+                pwdTipText: "Mínimo 8 caracteres (mayús, minús, número y especial)"
             },
             it: {
                 appTitle: "Gestore Spese", addTx: "Aggiungi", import: "Importa", export: "Esporta",
@@ -510,7 +523,8 @@
                 usernameLabel: "Utente", pwdLabel: "Password", loginBtn: "Accedi", regTab: "Registrati",
                 changePwd: "Password", logout: "Esci", oldPwd: "Vecchia", newPwd: "Nuova", confirmChange: "Conferma",
                 batchDelete: "Elimina Selezionati", newCategoryBtn: "Nuovo Gruppo", newCategoryTitle: "Aggiungi Gruppo", newCategoryDesc: "Aggiungi categoria:",
-                receiptImage: "Immagine Ricevuta", uploadImg: "Scegli Immagine"
+                receiptImage: "Immagine Ricevuta", uploadImg: "Scegli Immagine",
+                pwdTipText: "Almeno 8 caratteri conmaiuscole, minuscole, numeri e simboli"
             },
             fr: {
                 appTitle: "Gestionnaire", addTx: "Ajouter", import: "Importer", export: "Exporter",
@@ -527,7 +541,8 @@
                 usernameLabel: "Nom", pwdLabel: "Mot de passe", loginBtn: "Connexion", regTab: "Inscription",
                 changePwd: "Mot de passe", logout: "Sortir", oldPwd: "Ancien", newPwd: "Nouveau", confirmChange: "Confirmer",
                 batchDelete: "Supprimer", newCategoryBtn: "Nouveau Groupe", newCategoryTitle: "Ajouter un Groupe", newCategoryDesc: "Ajouter une catégorie :",
-                receiptImage: "Image du Reçu", uploadImg: "Choisir"
+                receiptImage: "Image du Reçu", uploadImg: "Choisir",
+                pwdTipText: "Minimum 8 caractères (majuscule, minuscule, chiffre et spécial)"
             },
             pt: {
                 appTitle: "Gestor de Despesas", addTx: "Adicionar", import: "Importar", export: "Exportar",
@@ -544,7 +559,8 @@
                 usernameLabel: "Usuário", pwdLabel: "Senha", loginBtn: "Entrar", regTab: "Registrar",
                 changePwd: "Senha", logout: "Sair", oldPwd: "Antiga", newPwd: "Nova", confirmChange: "Confirmar",
                 batchDelete: "Excluir Selecionados", newCategoryBtn: "Novo Grupo", newCategoryTitle: "Adicionar Grupo", newCategoryDesc: "Adicionar categoria principal:",
-                receiptImage: "Imagem do Recibo", uploadImg: "Escolher Imagem"
+                receiptImage: "Imagem do Recibo", uploadImg: "Escolher Imagem",
+                pwdTipText: "Mínimo de 8 caracteres (maiúsculas, minúsculas, números e símbolos)"
             },
             ja: {
                 appTitle: "お小遣い帳", addTx: "記録する", import: "インポート", export: "エクスポート",
@@ -561,7 +577,8 @@
                 usernameLabel: "ユーザー名", pwdLabel: "パスワード", loginBtn: "ログイン", regTab: "登録する",
                 changePwd: "パスワード", logout: "ログアウト", oldPwd: "旧", newPwd: "新", confirmChange: "確認",
                 batchDelete: "一括削除", newCategoryBtn: "グループ追加", newCategoryTitle: "大類の追加", newCategoryDesc: "新しい大類名を入力してください：",
-                receiptImage: "レシート画像", uploadImg: "画像を選択"
+                receiptImage: "レシート画像", uploadImg: "画像を選択",
+                pwdTipText: "8文字以上で、大文字、小文字、数字、特殊文字を含めてください"
             },
             ko: {
                 appTitle: "다중 통화 가계부", addTx: "기록", import: "가져오기", export: "내보내기",
@@ -578,11 +595,36 @@
                 usernameLabel: "사용자 이름", pwdLabel: "비밀번호", loginBtn: "로그인", regTab: "가입하기",
                 changePwd: "비밀번호", logout: "로그아웃", oldPwd: "기존", newPwd: "신규", confirmChange: "확인",
                 batchDelete: "선택 삭제", newCategoryBtn: "대분류 추가", newCategoryTitle: "대분류 추가", newCategoryDesc: "새로운 대분류 이름을 입력하세요:",
-                receiptImage: "영수증 이미지", uploadImg: "이미지 선택"
+                receiptImage: "영수증 이미지", uploadImg: "이미지 선택",
+                pwdTipText: "8자 이상, 대/소문자, 숫자, 특수문자 포함"
             }
         };
 
         const exchangeRates = { 'CNY': 1.0, 'EUR': 7.8, 'USD': 7.2, 'GBP': 9.1, 'JPY': 0.048 };
+
+        // 密码显隐切换函数
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (!input || !icon) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.className = "fa-solid fa-eye-slash text-xs";
+            } else {
+                input.type = 'password';
+                icon.className = "fa-solid fa-eye text-xs";
+            }
+        }
+
+        // 强密码校验正则：不少于8位，包含大小写字母、数字、特殊字符
+        function validateStrongPassword(password) {
+            const minLength = password.length >= 8;
+            const hasUpper = /[A-Z]/.test(password);
+            const hasLower = /[a-z]/.test(password);
+            const hasNum = /[0-9]/.test(password);
+            const hasSpecial = /[^A-Za-z0-9]/.test(password);
+            return minLength && hasUpper && hasLower && hasNum && hasSpecial;
+        }
 
         function changeLanguage(lang) {
             currentLang = lang;
@@ -612,15 +654,19 @@
             const loginBtn = document.getElementById('tabLoginBtn');
             const regBtn = document.getElementById('tabRegBtn');
             const submitBtn = document.getElementById('authSubmitBtn');
+            const pwdTip = document.getElementById('pwdTip');
             const dict = translations[currentLang] || translations.zh;
+            
             if (mode === 'login') {
                 if (loginBtn) loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
                 if (regBtn) regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition";
                 if (submitBtn) submitBtn.innerText = dict.loginBtn;
+                if (pwdTip) pwdTip.classList.add('hidden');
             } else {
                 if (regBtn) regBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg bg-white text-indigo-600 shadow-sm transition";
                 if (loginBtn) loginBtn.className = "flex-1 py-2 text-xs font-bold rounded-lg text-slate-500 transition";
                 if (submitBtn) submitBtn.innerText = dict.regBtn;
+                if (pwdTip) pwdTip.classList.remove('hidden');
             }
         }
 
@@ -633,6 +679,16 @@
             if (errBox) errBox.classList.add('hidden');
 
             if (!username || !password) return;
+
+            // 注册时校验强密码规则
+            if (authMode === 'register' && !validateStrongPassword(password)) {
+                if (errBox) {
+                    errBox.innerText = "密码必须不少于8位，且包含大写字母、小写字母、数字和特殊字符！";
+                    errBox.classList.remove('hidden');
+                }
+                return;
+            }
+
             if (submitBtn) submitBtn.disabled = true;
 
             try {
@@ -738,7 +794,11 @@
             e.preventDefault();
             const old_password = document.getElementById('oldPassword').value.trim();
             const new_password = document.getElementById('newPassword').value.trim();
-            if (!old_password || !new_password) return;
+            
+            if (!validateStrongPassword(new_password)) {
+                alert('新密码必须不少于8位，且包含大写字母、小写字母、数字和特殊字符！');
+                return;
+            }
 
             try {
                 const res = await fetch(`${API_BASE}/change-password`, {
@@ -1117,7 +1177,6 @@
             `;}).join('');
         }
 
-        // 核心更新：多币种独立列出 + 最终折算总计 (带有严格的非空检查)
         function updateSummaryAndCharts(data) {
             const targetCurrency = baseCurrency; 
             const targetRate = exchangeRates[targetCurrency] || 1.0;
@@ -1150,7 +1209,6 @@
                 }
             });
 
-            // 渲染收入各币种明细
             const incDiv = document.getElementById('incomeBreakdown');
             if (incDiv) {
                 if (Object.keys(incByCurr).length === 0) {
@@ -1165,7 +1223,6 @@
                 }
             }
 
-            // 渲染支出各币种明细
             const expDiv = document.getElementById('expenseBreakdown');
             if (expDiv) {
                 if (Object.keys(expByCurr).length === 0) {
@@ -1180,7 +1237,6 @@
                 }
             }
 
-            // 渲染折算总计
             const symbol = targetCurrency === 'CNY' ? '¥' : (targetCurrency === 'EUR' ? '€' : (targetCurrency === 'USD' ? '$' : (targetCurrency === 'GBP' ? '£' : '¥')));
             
             const incConv = document.getElementById('totalIncomeConverted');
@@ -1320,7 +1376,7 @@
                         saveAndRender();
                         alert(`成功导入 ${newTxs.length} 条记录！`);
                     } else {
-                        alert('未读取到有效数据。');
+                        alert('未读取到有效 data。');
                     }
                 } catch (err) {
                     alert('导入失败，请检查文件格式！');
