@@ -73,7 +73,7 @@
         </div>
     </div>
 
-    <!-- 顶栏：类似顶级 FinTech App 的优雅设计 -->
+    <!-- 顶栏 -->
     <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40 pb-4">
         <div class="max-w-md mx-auto px-4 pt-4 flex flex-col gap-4">
             <div class="flex items-center justify-between">
@@ -81,7 +81,7 @@
                     <div class="w-9 h-9 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-sm shadow-md" id="userAvatarText">U</div>
                     <div>
                         <p class="text-[10px] text-slate-400 uppercase tracking-wider" data-i18n="welcomeBack">欢迎回来</p>
-                        <h1 id="userDisplay" class="text-sm font-bold truncate max-w-[120px]">账户</h1>
+                        <h1 id="userDisplay" class="text-sm font-bold truncate max-w-[100px]">账户</h1>
                     </div>
                 </div>
                 <div class="flex items-center gap-2">
@@ -96,10 +96,13 @@
                         <option value="ja">🇯🇵 日本語</option>
                         <option value="ko">🇰🇷 한국어</option>
                     </select>
+                    <button onclick="logout()" class="bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 border border-rose-500/30 text-xs px-2.5 py-1.5 rounded-xl transition flex items-center gap-1 font-medium" title="退出账号">
+                        <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">退出</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- 核心资产大卡片 (仿照参考图中的蓝色渐变卡片) -->
+            <!-- 核心资产大卡片 -->
             <div class="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-3xl p-5 shadow-xl text-white relative overflow-hidden">
                 <div class="absolute -right-6 -bottom-6 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
                 <div class="flex justify-between items-start mb-3">
@@ -127,7 +130,7 @@
                 </div>
             </div>
 
-            <!-- 快捷操作圆形按钮组 (仿照参考图中的快捷操作) -->
+            <!-- 快捷操作按钮组 -->
             <div class="grid grid-cols-4 gap-2 pt-1">
                 <button onclick="openModal()" class="flex flex-col items-center justify-center p-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 transition active:scale-95 border border-slate-700/60 shadow-sm">
                     <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-1 text-sm">
@@ -165,9 +168,6 @@
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                     <i class="fa-solid fa-calendar-days text-indigo-500"></i> <span data-i18n="range">时间范围</span>
                 </span>
-                <button onclick="logout()" class="text-xs text-rose-500 font-semibold hover:underline flex items-center gap-1">
-                    <i class="fa-solid fa-right-from-bracket"></i> <span data-i18n="logout">退出</span>
-                </button>
             </div>
             <div class="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1">
                 <button onclick="setTimeRange('all')" id="btn-all" class="px-3 py-1.5 text-xs font-medium rounded-xl bg-indigo-600 text-white transition shrink-0 shadow-sm" data-i18n="all">全部</button>
@@ -178,7 +178,7 @@
             </div>
         </div>
 
-        <!-- 图表统计区块 (双饼图支持：支出分类 / 收入分类) -->
+        <!-- 图表统计区块 -->
         <div class="grid grid-cols-1 gap-4">
             <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100">
                 <div class="flex justify-between items-center mb-3">
@@ -229,12 +229,11 @@
                 </select>
             </div>
 
-            <!-- 仿照参考图的移动端圆角账单卡片流 -->
             <div id="transactionCardList" class="space-y-2.5 pt-1"></div>
         </div>
     </main>
 
-    <!-- 底部固定导航栏 (模仿参考图底部 TabBar) -->
+    <!-- 底部固定导航栏 -->
     <nav class="fixed bottom-0 inset-x-0 bg-white/90 backdrop-blur-md border-t border-slate-200 z-40 py-2 px-6 flex justify-around items-center text-slate-500">
         <button onclick="window.scrollTo({top:0, behavior:'smooth'})" class="flex flex-col items-center gap-1 text-indigo-600">
             <i class="fa-solid fa-house text-base"></i>
@@ -413,7 +412,7 @@
         if (baseCurrSelect) baseCurrSelect.value = baseCurrency;
 
         let currentTimeRange = 'all';
-        let currentChartMode = 'expense'; // 'expense' 或 'income'
+        let currentChartMode = 'expense';
         let categoryChart = null;
         let typeChart = null;
         let pendingImportFile = null;
@@ -430,7 +429,7 @@
                 appTitle: "多币种个人记账本", addTx: "记一笔", import: "导入", export: "导出",
                 range: "时间范围", all: "全部", today: "今日", week: "本周", month: "本月", year: "本年", to: "至",
                 baseCurrency: "折算基准:", totalIncome: "总收入", totalExpenseBalance: "总支出",
-                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币种实时折算", expCategoryChart: "支出分类统计", incCategoryChart: "收入分类统计",
+                balance: "结余", convertedTotal: "折算总计:", convertedBalance: "折算净结余 (实时)", convertedNote: "已按当前基准币種实时折算", expCategoryChart: "支出分类统计", incCategoryChart: "收入分类统计",
                 typeComparisonChart: "收支类型对比 (折算后)", allTypes: "全部类型", income: "收入", expense: "支出",
                 allCategories: "全部分类", thDate: "日期", thGroup: "大类", thCategory: "分类", thType: "类型",
                 thNote: "备注/凭证", thAmount: "金额", thAction: "操作", modalTitle: "添加新记账", modalEditTitle: "修改账单",
@@ -450,7 +449,7 @@
                 range: "時間範圍", all: "全部", today: "今日", week: "本週", month: "本月", year: "本年", to: "至",
                 baseCurrency: "基準:", totalIncome: "總收入", totalExpenseBalance: "總支出",
                 balance: "結餘", convertedTotal: "折算總計:", convertedBalance: "折算淨結餘 (實時)", convertedNote: "已按當前基準幣種實時折算", expCategoryChart: "支出分類統計", incCategoryChart: "收入分類統計",
-                typeComparisonChart: "收支類型對比", allTypes: "全部類型", income: "收入", expense: "支出的",
+                typeComparisonChart: "收支類型對比", allTypes: "全部類型", income: "收入", expense: "支出",
                 allCategories: "全部分類", thDate: "日期", thGroup: "大類", thCategory: "分類", thType: "類型",
                 thNote: "備註/憑證", thAmount: "金額", thAction: "操作", modalTitle: "新增記帳", modalEditTitle: "修改帳單",
                 modalDate: "日期與時間", modalType: "收支類型", modalCurrency: "幣種", modalGroup: "大類",
@@ -459,7 +458,7 @@
                 importModalDesc: "請為本次匯入的所有帳單指定幣種：", loginTab: "登入帳號", regTab: "註冊新帳號",
                 usernameLabel: "用戶名 / 帳號", pwdLabel: "密碼", loginBtn: "立即登入", regTab: "立即註冊",
                 changePwd: "修改密碼", logout: "退出", oldPwd: "原密碼", newPwd: "新密碼", confirmChange: "確認修改",
-                batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個新的專屬大類：",
+                batchDelete: "批量刪除", newCategoryBtn: "新增大類", newCategoryTitle: "新增自定義大類", newCategoryDesc: "為當前收支類型添加一個專屬大類：",
                 receiptImage: "帳單憑證圖片 (小票/發票)", uploadImg: "選擇圖片",
                 pwdTipText: "密碼需不少於8位，包含大小寫字母、數字和特殊字符",
                 welcomeBack: "歡迎回來", transactionsTitle: "帳單明細", navHome: "首頁", navExport: "報表"
@@ -1076,7 +1075,6 @@
             return `${currency || 'CNY'} ${Number(amount).toFixed(2)}`;
         }
 
-        // 渲染移动端风格的圆角卡片列表
         function renderCardList(data) {
             const container = document.getElementById('transactionCardList');
             const txCountEl = document.getElementById('txCount');
@@ -1161,6 +1159,9 @@
         }
 
         function renderCharts(categoryData, totalInc, totalExp, symbol) {
+            // 安全防御：如果 Chart.js 尚未加载完成，直接安全返回避免报错
+            if (typeof Chart === 'undefined') return;
+
             const catCtx = document.getElementById('categoryChart');
             if (!catCtx) return;
             
@@ -1240,7 +1241,7 @@
                     const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { header: 1 });
                     if (jsonRows.length < 2) { alert('文件内容为空！'); return; }
 
-                    const header = jsonRows[0];
+                    const header = jsonRows.length > 0 ? jsonRows[0] : [];
                     const dateIdx = header.findIndex(h => h && String(h).includes('日期')) !== -1 ? header.findIndex(h => h && String(h).includes('日期')) : 0;
                     const groupIdx = header.findIndex(h => h && String(h).includes('分类筛选')) !== -1 ? header.findIndex(h => h && String(h).includes('分类筛选')) : 1;
                     const catIdx = header.findIndex(h => h && String(h).includes('记账分类')) !== -1 ? header.findIndex(h => h && String(h).includes('记账分类')) : 2;
